@@ -383,6 +383,13 @@ class UIController {
                     ${tx.tx_hash.substring(0, 10)}...
                 </a>` : 'N/A';
             
+            // Network badge for transaction
+            const networkBadge = tx.network ? 
+                `<span class="badge ${tx.network.includes('Testnet') ? 'bg-testnet' : 'bg-mainnet'}" style="font-size: 10px;">
+                    ${tx.network.includes('Testnet') ? 'Testnet' : 'Mainnet'}
+                </span>` : 
+                '<span class="badge bg-secondary" style="font-size: 10px;">Unknown</span>';
+
             const row = tbody.insertRow();
             row.innerHTML = `
                 <td>${tx.type}</td>
@@ -392,6 +399,7 @@ class UIController {
                 <td>${tx.amount.toFixed(6)}</td>
                 <td>${tx.gas_fee.toFixed(6)} POL</td>
                 <td><span class="${statusClass}">${tx.status}</span></td>
+                <td>${networkBadge}</td>
                 <td>${txHashDisplay}</td>
                 <td><small>${new Date(tx.timestamp).toLocaleString()}</small></td>
             `;

@@ -70,6 +70,8 @@ class MultiTransceiver {
                         status: txResult.success ? 'success' : 'failed',
                         tx_hash: txResult.txHash,
                         error: txResult.error || null,
+                        network: this.walletManager.getCurrentNetwork().name,
+                        chainId: this.walletManager.getCurrentNetwork().chainId,
                         timestamp: new Date().toISOString()
                     };
                     
@@ -124,6 +126,8 @@ class MultiTransceiver {
                         status: txResult.success ? 'success' : 'failed',
                         tx_hash: txResult.txHash,
                         error: txResult.error || null,
+                        network: this.walletManager.getCurrentNetwork().name,
+                        chainId: this.walletManager.getCurrentNetwork().chainId,
                         timestamp: new Date().toISOString()
                     };
                     
@@ -195,6 +199,8 @@ class MultiTransceiver {
                 'Gas Fee (POL)': tx.gas_fee.toFixed(6),
                 'Status': tx.status,
                 'TX Hash': tx.tx_hash || 'N/A',
+                'Network': tx.network || 'Unknown',
+                'Chain ID': tx.chainId || 'Unknown',
                 'Error': tx.error || 'N/A',
                 'Timestamp': tx.timestamp
             }));

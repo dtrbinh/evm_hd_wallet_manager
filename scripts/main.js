@@ -537,8 +537,17 @@ async function toggleNetwork() {
                         // Ensure Web3 connection is properly refreshed for the new network
                         await walletManager.refreshConnection();
                         
+                        // Preserve transaction history before recreating multi-transceiver
+                        const existingHistory = multiTransceiver ? multiTransceiver.getTransactionHistory() : [];
+                        
                         // Re-create multi-transceiver instance
                         multiTransceiver = new MultiTransceiver(walletManager);
+                        
+                        // Restore transaction history
+                        if (existingHistory.length > 0) {
+                            multiTransceiver.transactionHistory = existingHistory;
+                            console.log(`Preserved ${existingHistory.length} transaction history entries across network switch`);
+                        }
                         
                         // If there were wallets before, regenerate them for the new network
                         if (hadWallets) {
