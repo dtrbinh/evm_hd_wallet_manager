@@ -14,6 +14,7 @@ class UIController {
      */
     initialize() {
         this.setupEventListeners();
+        this.setupTableResizing();
         this.updateWalletCount();
         console.log('UI Controller initialized');
     }
@@ -128,7 +129,10 @@ class UIController {
             
             row.innerHTML = `
                 <td>${wallet.index}</td>
-                <td class="text-truncate-address" title="${wallet.address}">${wallet.address}</td>
+                <td class="address-cell" title="${wallet.address}">
+                    <span class="address-truncated">${this.truncateAddress(wallet.address, 20)}</span>
+                    <span class="address-full">${wallet.address}</span>
+                </td>
                 <td><small>${wallet.path}</small></td>
                 <td class="${this.getBalanceClass(wallet.native_pol_balance)}">${polBalance}</td>
                 <td class="${this.getBalanceClass(wallet.usdt_balance)}">${usdtBalance}</td>
@@ -310,8 +314,14 @@ class UIController {
             const statusClass = tx.status === 'success' ? 'text-success' : 
                               tx.status === 'failed' ? 'text-danger' : 'text-warning';
             
+            // Get explorer URL based on current network
+            let explorerUrl = 'https://polygonscan.com';
+            if (window.walletManager && window.walletManager.getCurrentNetwork) {
+                explorerUrl = window.walletManager.getCurrentNetwork().explorerUrl;
+            }
+            
             const txHashDisplay = tx.tx_hash ? 
-                `<a href="https://polygonscan.com/tx/${tx.tx_hash}" target="_blank" class="text-decoration-none">
+                `<a href="${explorerUrl}/tx/${tx.tx_hash}" target="_blank" class="text-decoration-none">
                     ${tx.tx_hash.substring(0, 10)}...
                 </a>` : 'N/A';
             
@@ -443,4 +453,136 @@ class UIController {
         if (diffHours < 24) return `${diffHours} hours ago`;
         return `${diffDays} days ago`;
     }
-} 
+
+    /**
+     * Clear wallet display when switching networks
+     */
+    clearDisplay() {
+        // Clear wallet table
+        const tbody = document.getElementById('walletsTableBody');
+        if (tbody) {
+            tbody.innerHTML = '';
+        }
+        
+        // Hide cards
+        const walletsCard = document.getElementById('walletsCard');
+        const totalsSection = document.getElementById('totalsSection');
+        const transactionHistoryCard = document.getElementById('transactionHistoryCard');
+        const stepControls = document.getElementById('stepControls');
+        
+        if (walletsCard) walletsCard.style.display = 'none';
+        if (totalsSection) totalsSection.style.display = 'none';
+        if (transactionHistoryCard) transactionHistoryCard.style.display = 'none';
+        if (stepControls) stepControls.style.display = 'none';
+        
+        // Reset totals
+        const elements = ['totalWallets', 'totalNativePol', 'totalUsdt'];
+        elements.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '0';
+        });
+        
+        // Reset transaction history
+        const transactionHistoryBody = document.getElementById('transactionHistoryBody');
+        if (transactionHistoryBody) {
+            transactionHistoryBody.innerHTML = '';
+        }
+        
+        // Reset progress
+        this.hideProgress();
+        this.hideFullscreenLoading();
+        
+        console.log('Display cleared for network switch');
+    }
+
+    /**
+     * Show full-screen loading overlay
+     */
+    showFullscreenLoading(text = 'Loading...', subtext = 'Please wait', progress = 0) {
+        const overlay = document.getElementById('fullscreenLoading');
+        const loadingText = document.getElementById('loadingText');
+        const loadingSubtext = document.getElementById('loadingSubtext');
+        const progressBar = document.getElementById('loadingProgressBar');
+        
+        if (overlay) {
+            loadingText.textContent = text;
+            loadingSubtext.textContent = subtext;
+            progressBar.style.width = progress + '%';
+            overlay.classList.add('show');
+        }
+    }
+
+    /**
+     * Update full-screen loading progress
+     */
+    updateFullscreenLoading(text, subtext = '', progress = null) {
+        const loadingText = document.getElementById('loadingText');
+        const loadingSubtext = document.getElementById('loadingSubtext');
+        const progressBar = document.getElementById('loadingProgressBar');
+        
+        if (loadingText) loadingText.textContent = text;
+        if (loadingSubtext && subtext) loadingSubtext.textContent = subtext;
+        if (progressBar && progress !== null) {
+            progressBar.style.width = progress + '%';
+        }
+    }
+
+    /**
+     * Hide full-screen loading overlay
+     */
+    hideFullscreenLoading() {
+        const overlay = document.getElementById('fullscreenLoading');
+        if (overlay) {
+            overlay.classList.remove('show');
+        }
+    }
+
+    /**
+     * Setup table column resizing
+     */
+    setupTableResizing() {
+        let isResizing = false;
+        let currentColumn = null;
+        let startX = 0;
+        let startWidth = 0;
+
+        // Add event listeners to column resizers
+        document.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('column-resizer')) {
+                isResizing = true;
+                currentColumn = e.target.parentElement;
+                startX = e.pageX;
+                startWidth = currentColumn.offsetWidth;
+                
+                e.target.classList.add('resizing');
+                document.body.style.cursor = 'col-resize';
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isResizing && currentColumn) {
+                const diff = e.pageX - startX;
+                const newWidth = Math.max(50, startWidth + diff); // Minimum width of 50px
+                currentColumn.style.width = newWidth + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (isResizing) {
+                isResizing = false;
+                if (currentColumn) {
+                    const resizer = currentColumn.querySelector('.column-resizer');
+                    if (resizer) resizer.classList.remove('resizing');
+                }
+                currentColumn = null;
+                document.body.style.cursor = '';
+            }
+        });
+
+        // Prevent text selection during resize
+        document.addEventListener('selectstart', (e) => {
+            if (isResizing) e.preventDefault();
+        });
+    }
+}

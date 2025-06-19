@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function() {
         uiController.showProgress(message);
     };
     
+    // Initialize network display
+    updateNetworkDisplay();
+    
     console.log('Application initialized successfully');
 });
 
@@ -41,7 +44,7 @@ async function initializeWalletManager() {
             return;
         }
         
-        uiController.showProgress('Initializing wallet manager...', 10);
+        uiController.showFullscreenLoading('Initializing Wallet Manager', 'Connecting to blockchain network...', 10);
         
         // Create wallet manager instance
         walletManager = new HDWalletManager();
@@ -53,9 +56,9 @@ async function initializeWalletManager() {
             // Create multi-transceiver instance
             multiTransceiver = new MultiTransceiver(walletManager);
             
-            uiController.showProgress('Wallet manager initialized successfully!', 100);
+            uiController.updateFullscreenLoading('Wallet Manager Initialized!', 'Ready to generate wallets', 100);
             uiController.showStepControls();
-            uiController.hideProgress();
+            setTimeout(() => uiController.hideFullscreenLoading(), 1000);
             
             uiController.showToast('Wallet manager initialized successfully!', 'success');
         } else {
@@ -94,7 +97,7 @@ async function generateWallets() {
             return;
         }
         
-        uiController.showProgress('Generating HD wallets...', 20);
+        uiController.showFullscreenLoading('Generating HD Wallets', `Creating ${count} wallets from seed phrase...`, 20);
         
         const wallets = walletManager.generateWallets(count, startIndex, endIndex);
         
@@ -107,8 +110,8 @@ async function generateWallets() {
         }));
         
         uiController.updateWalletsTable(walletsForDisplay);
-        uiController.showProgress(`Generated ${wallets.length} HD wallets successfully!`, 100);
-        uiController.hideProgress();
+        uiController.updateFullscreenLoading('Wallets Generated Successfully!', `${wallets.length} wallets ready for use`, 100);
+        setTimeout(() => uiController.hideFullscreenLoading(), 1000);
         
         uiController.showToast(`Generated ${wallets.length} wallets successfully!`, 'success');
         
@@ -129,7 +132,7 @@ async function checkBalances() {
             return;
         }
         
-        uiController.showProgress('Checking balances for all wallets...', 30);
+        uiController.showFullscreenLoading('Checking Wallet Balances', 'Fetching balance data from blockchain...', 30);
         
         const walletsWithBalances = await walletManager.checkAllBalances();
         
@@ -139,8 +142,8 @@ async function checkBalances() {
         const totals = walletManager.getTotals();
         uiController.updateTotals(totals);
         
-        uiController.showProgress('Balance checking completed!', 100);
-        uiController.hideProgress();
+        uiController.updateFullscreenLoading('Balance Check Complete!', 'All wallet balances updated', 100);
+        setTimeout(() => uiController.hideFullscreenLoading(), 1000);
         
         uiController.showToast('Balance check completed successfully!', 'success');
         
@@ -440,6 +443,106 @@ function showTransactionStats() {
     }
     
     alert(message);
+}
+
+/**
+ * Toggle between mainnet and testnet
+ */
+async function toggleNetwork() {
+    try {
+        const networkSwitch = document.getElementById('networkSwitch');
+        const targetNetwork = networkSwitch.checked ? 'testnet' : 'mainnet';
+        
+        // If wallet manager exists, switch its network
+        if (walletManager) {
+            const result = walletManager.switchNetwork(targetNetwork);
+            if (result.success) {
+                // Clear existing wallets since network changed
+                walletManager.wallets = [];
+                
+                // Re-initialize wallet manager with new network if seed phrase is available
+                const seedPhrase = document.getElementById('seedPhrase').value.trim();
+                if (seedPhrase) {
+                    uiController.showFullscreenLoading('Switching Network', `Connecting to ${result.network.name}...`, 20);
+                    
+                    // Re-initialize with new network
+                    const initResult = await walletManager.initialize(seedPhrase);
+                    if (initResult.success) {
+                        // Re-create multi-transceiver instance
+                        multiTransceiver = new MultiTransceiver(walletManager);
+                        
+                        uiController.updateFullscreenLoading('Network Switch Complete!', `Connected to ${result.network.name}`, 100);
+                        uiController.showStepControls();
+                        setTimeout(() => uiController.hideFullscreenLoading(), 1000);
+                        
+                        uiController.showToast(`Switched to ${result.network.name} and re-initialized`, 'success');
+                    } else {
+                        throw new Error(initResult.error);
+                    }
+                } else {
+                    // Just clear display if no seed phrase
+                    uiController.clearDisplay();
+                    uiController.showToast(result.message + ' - Please re-initialize with seed phrase', 'info');
+                }
+                
+                // Update UI
+                updateNetworkDisplay();
+                
+                console.log('Network switched successfully:', result.network.name);
+            }
+        } else {
+            // Just update display if no wallet manager yet
+            updateNetworkDisplay();
+            uiController.showToast(`Switched to ${targetNetwork === 'testnet' ? 'Testnet' : 'Mainnet'}`, 'info');
+        }
+        
+    } catch (error) {
+        console.error('Error switching network:', error);
+        
+        // Revert switch position on error
+        const networkSwitch = document.getElementById('networkSwitch');
+        networkSwitch.checked = !networkSwitch.checked;
+        
+        if (uiController) {
+            uiController.showError(error.message);
+            uiController.showToast('Failed to switch network: ' + error.message, 'error');
+        } else {
+            alert('Failed to switch network: ' + error.message);
+        }
+    }
+}
+
+/**
+ * Update network display information
+ */
+function updateNetworkDisplay() {
+    const networkSwitch = document.getElementById('networkSwitch');
+    const currentNetworkEl = document.getElementById('currentNetwork');
+    const currentRPCEl = document.getElementById('currentRPC');
+    
+    if (!networkSwitch || !currentNetworkEl || !currentRPCEl) {
+        return;
+    }
+    
+    const isTestnet = networkSwitch.checked;
+    
+    if (walletManager) {
+        const network = walletManager.getCurrentNetwork();
+        currentNetworkEl.textContent = network.name;
+        currentNetworkEl.className = `badge ${isTestnet ? 'bg-testnet' : 'bg-mainnet'}`;
+        currentRPCEl.textContent = network.rpcUrl;
+    } else {
+        // Default display when no wallet manager
+        if (isTestnet) {
+            currentNetworkEl.textContent = 'Polygon Amoy Testnet';
+            currentNetworkEl.className = 'badge bg-testnet';
+            currentRPCEl.textContent = 'https://rpc-amoy.polygon.technology';
+        } else {
+            currentNetworkEl.textContent = 'Polygon Mainnet';
+            currentNetworkEl.className = 'badge bg-mainnet';
+            currentRPCEl.textContent = 'https://polygon-rpc.com';
+        }
+    }
 }
 
 // Global error handler

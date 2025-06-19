@@ -8,10 +8,29 @@ class HDWalletManager {
         this.wallets = [];
         this.isInitialized = false;
         this.seedPhrase = '';
-        this.rpcUrl = 'https://polygon-rpc.com';
+        this.currentNetwork = 'mainnet'; // 'mainnet' or 'testnet'
         
-        // Contract addresses
-        this.usdtAddress = '0xc2132D05D31c914a87C6611C10748AEb04B58e8F';
+        // Network configurations
+        this.networks = {
+            mainnet: {
+                name: 'Polygon Mainnet',
+                rpcUrl: 'https://polygon-rpc.com',
+                chainId: 137,
+                usdtAddress: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
+                explorerUrl: 'https://polygonscan.com'
+            },
+            testnet: {
+                name: 'Polygon Amoy Testnet',
+                rpcUrl: 'https://rpc-amoy.polygon.technology',
+                chainId: 80002,
+                usdtAddress: '0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582', // Mock USDT on testnet
+                explorerUrl: 'https://amoy.polygonscan.com'
+            }
+        };
+        
+        // Current network config
+        this.rpcUrl = this.networks[this.currentNetwork].rpcUrl;
+        this.usdtAddress = this.networks[this.currentNetwork].usdtAddress;
         
         // ERC20 ABI (minimal for balance and transfer)
         this.erc20Abi = [
@@ -45,6 +64,71 @@ class HDWalletManager {
     }
 
     /**
+     * Switch between mainnet and testnet
+     */
+    switchNetwork(network) {
+        if (!this.networks[network]) {
+            throw new Error(`Unknown network: ${network}`);
+        }
+        
+        const oldNetwork = this.currentNetwork;
+        this.currentNetwork = network;
+        this.rpcUrl = this.networks[network].rpcUrl;
+        this.usdtAddress = this.networks[network].usdtAddress;
+        
+        // Reset initialization status to force re-initialization with new network
+        this.isInitialized = false;
+        this.web3 = null;
+        
+        // Clear existing wallets since they're for the old network
+        this.wallets = [];
+        
+        console.log(`Switched from ${this.networks[oldNetwork].name} to ${this.networks[network].name}`);
+        
+        return {
+            success: true,
+            network: this.networks[network],
+            message: `Switched to ${this.networks[network].name}`
+        };
+    }
+
+    /**
+     * Get current network information
+     */
+    getCurrentNetwork() {
+        return this.networks[this.currentNetwork];
+    }
+
+    /**
+     * Force refresh Web3 connection (useful after network switch)
+     */
+    async refreshConnection() {
+        if (!this.isInitialized) {
+            throw new Error('Wallet manager not initialized');
+        }
+        
+        try {
+            // Create new Web3 instance with current network
+            this.web3 = new Web3(this.rpcUrl);
+            
+            // Test connection
+            const blockNumber = await this.web3.eth.getBlockNumber();
+            console.log(`Refreshed connection to ${this.networks[this.currentNetwork].name} - Block: ${blockNumber}`);
+            
+            return {
+                success: true,
+                message: `Connection refreshed to ${this.networks[this.currentNetwork].name}`,
+                blockNumber: blockNumber
+            };
+        } catch (error) {
+            console.error('Connection refresh error:', error);
+            this.isInitialized = false;
+            this.web3 = null;
+            throw error;
+        }
+    }
+
+    /**
      * Initialize the wallet manager
      */
     async initialize(seedPhrase, rpcUrl = null) {
@@ -61,22 +145,32 @@ class HDWalletManager {
             }
 
             this.seedPhrase = seedPhrase.trim();
-            this.rpcUrl = rpcUrl || this.rpcUrl;
+            
+            // Use provided RPC URL or current network's RPC URL
+            if (rpcUrl) {
+                this.rpcUrl = rpcUrl;
+            }
 
-            // Initialize Web3
+            // Initialize Web3 with current network's RPC
             this.web3 = new Web3(this.rpcUrl);
             
             // Test connection
-            await this.web3.eth.getBlockNumber();
+            const blockNumber = await this.web3.eth.getBlockNumber();
+            console.log(`Connected to ${this.networks[this.currentNetwork].name} - Block: ${blockNumber}`);
             
             this.isInitialized = true;
-            console.log('HD Wallet Manager initialized successfully');
+            console.log(`HD Wallet Manager initialized successfully on ${this.networks[this.currentNetwork].name}`);
             
-            return { success: true, message: 'Wallet manager initialized successfully' };
+            return { 
+                success: true, 
+                message: `Wallet manager initialized on ${this.networks[this.currentNetwork].name}`,
+                network: this.networks[this.currentNetwork]
+            };
             
         } catch (error) {
             console.error('Initialization error:', error);
             this.isInitialized = false;
+            this.web3 = null;
             return { success: false, error: error.message };
         }
     }
