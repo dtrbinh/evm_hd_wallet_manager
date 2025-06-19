@@ -1,210 +1,151 @@
-# HD Wallet Manager - Standalone Frontend Application
+# HD Wallet Manager - Standalone Frontend
 
-A complete standalone frontend application for managing HD wallets on the Polygon network with advanced MultiTransceiver capabilities.
+A complete standalone frontend application for managing HD wallets on the Polygon network with MultiTransceiver capabilities.
 
-## 🚀 Features
+## Features
 
-- **🌐 Pure Frontend**: No backend server required - runs entirely in your browser
-- **🔐 HD Wallet Generation**: Generate wallets from seed phrase with custom derivation paths
-- **💰 Balance Checking**: Check Native POL and USDT balances in real-time
-- **🔄 MultiTransceiver System**: 
-  - **Multi-Send**: Send tokens from 1 wallet to multiple wallets
-  - **Multi-Receive**: Collect tokens from multiple wallets to 1 wallet
-  - **Gas Estimation**: Calculate transaction costs before execution
-  - **Transaction History**: Track all transactions with detailed logs
-- **📊 Excel Export**: Export wallet data and transaction history
-- **🎨 Modern UI**: Beautiful Bootstrap 5 interface with smooth animations
+- **Pure Frontend**: No backend server required - runs entirely in the browser
+- **HD Wallet Generation**: Generate wallets from seed phrase with custom derivation paths
+- **Balance Checking**: Check Native POL and USDT balances
+- **MultiTransceiver System**: 
+  - Multi-Send: Send tokens from 1 wallet to multiple wallets
+  - Multi-Receive: Collect tokens from multiple wallets to 1 wallet
+  - Gas estimation and transaction history
+- **Excel Export**: Export wallet data and transaction history
+- **Modern UI**: Beautiful Bootstrap 5 interface with animations
 
-## 📁 Project Structure
+## Quick Start
+
+1. **Open the application**: Simply open `index.html` in your web browser
+2. **Enter seed phrase**: Input your 12-24 word mnemonic
+3. **Initialize**: Click "Initialize" to set up the wallet manager
+4. **Generate wallets**: Use custom derivation path ranges
+5. **Check balances**: Get current POL and USDT balances
+6. **Use MultiTransceiver**: Execute multi-wallet transactions
+
+## File Structure
 
 ```
 hd_wallet_manager/
-├── frontend/
-│   ├── index.html              # Main application file
-│   ├── README.md               # Frontend-specific documentation
-│   ├── styles/
-│   │   └── main.css            # Custom styling with gradients
-│   ├── scripts/
-│   │   ├── wallet-manager.js   # Core HD wallet management
-│   │   ├── multi-transceiver.js # Multi-transaction handling
-│   │   ├── ui-controller.js    # UI management and interactions
-│   │   └── main.js             # Application initialization
-│   └── static/                 # Static assets (future use)
-└── README.md                   # This file
+├── index.html              # Main application file
+├── README.md               # This documentation
+├── styles/
+│   └── main.css            # Custom styling
+├── scripts/
+│   ├── wallet-manager.js   # Core wallet management
+│   ├── multi-transceiver.js # Multi-transaction handling
+│   ├── ui-controller.js    # UI management
+│   └── main.js             # Application initialization
+└── static/                 # Static assets (if any)
 ```
 
-## 🎯 Quick Start
+## Dependencies
 
-1. **📂 Open Application**
-   ```bash
-   # Simply open the HTML file in your browser
-   open frontend/index.html
-   # or double-click the file
-   ```
+All dependencies are loaded via CDN:
+- **Web3.js 4.2.0**: Blockchain interactions
+- **Ethers.js 6.14.4**: HD wallet generation and crypto utilities
+- **Bootstrap 5.1.3**: UI framework
+- **Font Awesome 6.0**: Icons
+- **SheetJS**: Excel export functionality
 
-2. **🔑 Initialize Wallet Manager**
-   - Enter your 12-24 word seed phrase
-   - Optionally specify custom RPC URL
-   - Click "Initialize"
+## Security Notes
 
-3. **💼 Generate Wallets**
-   - Set derivation path range (default: 0-9 for 10 wallets)
-   - Click "1. Generate Wallets"
+⚠️ **Important Security Warnings**:
+- Never share your seed phrase
+- This application runs in your browser - ensure you're using a secure environment
+- Private keys are handled in memory only and never transmitted
+- Always verify transactions before execution
 
-4. **💳 Check Balances**
-   - Click "2. Check Balances"
-   - View Native POL and USDT balances
+## Browser Compatibility
 
-5. **🔄 Use MultiTransceiver**
-   - Click "3. MultiTransceiver"
-   - Choose Multi-Send or Multi-Receive mode
-   - Execute multi-wallet transactions
+- **Chrome/Edge**: Full support
+- **Firefox**: Full support
+- **Safari**: Full support (iOS 14.5+)
 
-6. **📥 Export Data**
-   - Click "4. Save to Excel"
-   - Download comprehensive reports
+## Usage
 
-## 🛠 Technology Stack
+### 1. Initialization
+- Enter your 12-24 word seed phrase
+- Optionally specify custom RPC URL
+- Click "Initialize"
 
-### Frontend Dependencies (CDN)
-- **Web3.js 4.2.0**: Ethereum/Polygon blockchain interactions
-- **BIP39**: Mnemonic phrase validation and seed generation
-- **HDKey**: Hierarchical deterministic wallet derivation
-- **Bootstrap 5.1.3**: Responsive UI framework
-- **Font Awesome 6.0**: Beautiful icons
-- **SheetJS**: Excel file generation
+### 2. Wallet Generation
+- Set start/end index for derivation paths (default: 0-9)
+- Click "1. Generate Wallets"
+- View generated wallet addresses and paths
 
-### Blockchain Integration
-- **Polygon Network**: Native POL and USDT token support
-- **HD Wallets**: BIP44 derivation paths (`m/44'/60'/0'/0/{index}`)
-- **Gas Optimization**: Smart gas estimation with 20% buffer
+### 3. Balance Checking
+- Click "2. Check Balances"
+- View Native POL and USDT balances
+- See totals summary
 
-## 🔒 Security Features
+### 4. MultiTransceiver
+- Click "3. MultiTransceiver"
+- Choose Multi-Send or Multi-Receive mode
+- Select wallets and configure transaction
+- Calculate gas fees
+- Execute transaction
 
-- **🔐 Client-Side Only**: Private keys never leave your browser
-- **🛡️ Memory-Only Storage**: No persistent storage of sensitive data
-- **✅ Transaction Validation**: Comprehensive validation before execution
-- **🔍 Balance Verification**: Real-time balance checks before transactions
+### 5. Export Data
+- Click "4. Save to Excel"
+- Download wallet data and transaction history
 
-## 📱 Browser Compatibility
+## MultiTransceiver Modes
 
-| Browser | Status | Notes |
-|---------|--------|-------|
-| Chrome | ✅ Full Support | Recommended |
-| Edge | ✅ Full Support | Recommended |
-| Firefox | ✅ Full Support | All features work |
-| Safari | ✅ Full Support | iOS 14.5+ required |
+### Multi-Send (1 → Many)
+- Select one sender wallet
+- Choose multiple receiver wallets
+- Set amount per receiver
+- Total cost = (amount × receivers) + gas fees
 
-## 🎮 Usage Guide
+### Multi-Receive (Many → 1)
+- Select one receiver wallet
+- Choose multiple sender wallets
+- Set amount per sender
+- Each sender sends the specified amount
 
-### MultiTransceiver Modes
+## Configuration
 
-#### 🔄 Multi-Send (1 → Many)
-Perfect for:
-- Distributing tokens to multiple wallets
-- Airdrops and batch payments
-- Splitting funds across wallets
-
-**Process:**
-1. Select sender wallet
-2. Choose multiple receiver wallets
-3. Set amount per receiver
-4. Calculate gas fees
-5. Execute transaction
-
-#### 🔄 Multi-Receive (Many → 1)
-Perfect for:
-- Consolidating funds from multiple wallets
-- Collecting tokens into main wallet
-- Centralizing assets
-
-**Process:**
-1. Select receiver wallet
-2. Choose multiple sender wallets
-3. Set amount per sender
-4. Calculate gas fees
-5. Execute transaction
+### Supported Networks
+- **Polygon Mainnet** (default)
+- Custom RPC URLs supported
 
 ### Supported Tokens
+- **Native POL**: Polygon's native token
+- **USDT**: Tether USD (0xc2132D05D31c914a87C6611C10748AEb04B58e8F)
 
-| Token | Type | Contract Address |
-|-------|------|------------------|
-| POL | Native | Native Polygon token |
-| USDT | ERC20 | `0xc2132D05D31c914a87C6611C10748AEb04B58e8F` |
+### Derivation Paths
+- Standard: `m/44'/60'/0'/0/{index}`
+- Custom ranges: 0-999 (max 100 wallets)
 
-### Derivation Path Configuration
-
-- **Standard Path**: `m/44'/60'/0'/0/{index}`
-- **Index Range**: 0-999 (maximum 100 wallets per session)
-- **Custom Ranges**: Support for any start/end index combination
-
-## 🚨 Important Security Warnings
-
-⚠️ **Critical Security Notes:**
-- Never share your seed phrase with anyone
-- Ensure you're using a secure, private browser environment
-- Always verify transaction details before execution
-- Keep your seed phrase backed up securely offline
-- This tool is for educational and personal use
-
-## 🛠 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
-1. **Invalid Seed Phrase**
+1. **"Invalid seed phrase"**
    - Ensure 12, 15, 18, 21, or 24 words
-   - Check for spelling errors
-   - Verify word list compatibility
+   - Check for typos
 
-2. **Connection Failed**
-   - Check internet connectivity
-   - Try different RPC URL
-   - Verify network isn't blocked
+2. **"Connection failed"**
+   - Check internet connection
+   - Try default RPC or different RPC URL
 
-3. **Balance Check Failed**
-   - Network congestion
+3. **"Balance check failed"**
+   - Network connectivity issues
    - RPC rate limiting
-   - Invalid wallet addresses
 
-4. **Transaction Failed**
-   - Insufficient balance for amount + gas
+4. **"Transaction failed"**
+   - Insufficient balance
    - Network congestion
-   - Invalid recipient addresses
+   - Gas estimation issues
 
-### Debug Information
-- Open browser console (F12) for detailed error logs
-- Check network tab for failed requests
-- Verify wallet addresses are valid
+### Browser Console
+Check browser console (F12) for detailed error messages.
 
-## 📈 Future Enhancements
+## License
 
-- [ ] Support for additional ERC20 tokens
-- [ ] Multi-network support (Ethereum, BSC, etc.)
-- [ ] Advanced transaction scheduling
-- [ ] Portfolio tracking and analytics
-- [ ] Mobile-responsive improvements
-- [ ] Offline mode capabilities
+This project is for educational and personal use. Use at your own risk.
 
-## 📄 License
+## Support
 
-This project is for educational and personal use. Use at your own risk and responsibility.
-
-## 🤝 Contributing
-
-This is a standalone frontend application. To contribute:
-1. Fork the repository
-2. Make your changes in the `frontend/` directory
-3. Test thoroughly in multiple browsers
-4. Submit a pull request
-
-## 📞 Support
-
-For issues or questions:
-1. Check the browser console for error messages
-2. Review the troubleshooting section
-3. Verify your browser compatibility
-4. Ensure your seed phrase is valid
-
----
-
-**⚡ Ready to manage your HD wallets? Open `frontend/index.html` and get started!** 
+For issues or questions, check the browser console for detailed error messages. 
