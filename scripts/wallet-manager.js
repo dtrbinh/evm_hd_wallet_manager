@@ -223,7 +223,88 @@ class HDWalletManager {
     }
 
     /**
-     * Check balances for all wallets
+     * Check balance for a single wallet
+     */
+    async checkSingleWalletBalance(walletIndex, onProgress = null) {
+        try {
+            if (!this.isInitialized || this.wallets.length === 0) {
+                throw new Error('No wallets available');
+            }
+
+            const wallet = this.wallets.find(w => w.index === walletIndex);
+            if (!wallet) {
+                throw new Error(`Wallet with index ${walletIndex} not found`);
+            }
+
+            try {
+                // Notify progress start
+                if (onProgress) {
+                    onProgress(walletIndex, 'checking', null);
+                }
+
+                // Check Native POL balance
+                const polBalance = await this.web3.eth.getBalance(wallet.address);
+                const polBalanceEth = this.web3.utils.fromWei(polBalance, 'ether');
+                
+                // Check USDT balance
+                const usdtContract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);
+                const usdtBalance = await usdtContract.methods.balanceOf(wallet.address).call();
+                const usdtBalanceFormatted = parseFloat(usdtBalance) / Math.pow(10, 6); // USDT has 6 decimals
+                
+                // Update wallet object
+                wallet.nativePol = parseFloat(polBalanceEth);
+                wallet.usdt = usdtBalanceFormatted;
+                wallet.timestamp = new Date().toISOString();
+                
+                const result = {
+                    index: wallet.index,
+                    address: wallet.address,
+                    path: wallet.path,
+                    native_pol_balance: parseFloat(polBalanceEth),
+                    usdt_balance: usdtBalanceFormatted,
+                    timestamp: wallet.timestamp
+                };
+
+                // Notify progress completion
+                if (onProgress) {
+                    onProgress(walletIndex, 'completed', result);
+                }
+
+                return result;
+                
+            } catch (error) {
+                console.error(`Error checking balance for wallet ${wallet.index}:`, error);
+                
+                // Update wallet with error state
+                wallet.nativePol = 'error';
+                wallet.usdt = 'error';
+                wallet.timestamp = new Date().toISOString();
+                
+                const result = {
+                    index: wallet.index,
+                    address: wallet.address,
+                    path: wallet.path,
+                    native_pol_balance: 'error',
+                    usdt_balance: 'error',
+                    timestamp: wallet.timestamp
+                };
+
+                // Notify progress error
+                if (onProgress) {
+                    onProgress(walletIndex, 'error', result);
+                }
+
+                return result;
+            }
+
+        } catch (error) {
+            console.error('Error in checkSingleWalletBalance:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Check balances for all wallets (legacy method - kept for compatibility)
      */
     async checkAllBalances() {
         try {
@@ -234,47 +315,8 @@ class HDWalletManager {
             const results = [];
             
             for (const wallet of this.wallets) {
-                try {
-                    // Check Native POL balance
-                    const polBalance = await this.web3.eth.getBalance(wallet.address);
-                    const polBalanceEth = this.web3.utils.fromWei(polBalance, 'ether');
-                    
-                    // Check USDT balance
-                    const usdtContract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);
-                    const usdtBalance = await usdtContract.methods.balanceOf(wallet.address).call();
-                    const usdtBalanceFormatted = parseFloat(usdtBalance) / Math.pow(10, 6); // USDT has 6 decimals
-                    
-                    // Update wallet object
-                    wallet.nativePol = parseFloat(polBalanceEth);
-                    wallet.usdt = usdtBalanceFormatted;
-                    wallet.timestamp = new Date().toISOString();
-                    
-                    results.push({
-                        index: wallet.index,
-                        address: wallet.address,
-                        path: wallet.path,
-                        native_pol_balance: parseFloat(polBalanceEth),
-                        usdt_balance: usdtBalanceFormatted,
-                        timestamp: wallet.timestamp
-                    });
-                    
-                } catch (error) {
-                    console.error(`Error checking balance for wallet ${wallet.index}:`, error);
-                    
-                    // Update wallet with error state
-                    wallet.nativePol = 'error';
-                    wallet.usdt = 'error';
-                    wallet.timestamp = new Date().toISOString();
-                    
-                    results.push({
-                        index: wallet.index,
-                        address: wallet.address,
-                        path: wallet.path,
-                        native_pol_balance: 'error',
-                        usdt_balance: 'error',
-                        timestamp: wallet.timestamp
-                    });
-                }
+                const result = await this.checkSingleWalletBalance(wallet.index);
+                results.push(result);
             }
 
             console.log('Balance check completed for all wallets');

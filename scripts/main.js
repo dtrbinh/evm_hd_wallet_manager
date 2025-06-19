@@ -123,7 +123,7 @@ async function generateWallets() {
 }
 
 /**
- * Check balances for all wallets
+ * Check balances for all wallets (progressive update)
  */
 async function checkBalances() {
     try {
@@ -132,24 +132,87 @@ async function checkBalances() {
             return;
         }
         
-        uiController.showFullscreenLoading('Checking Wallet Balances', 'Fetching balance data from blockchain...', 30);
+        const totalWallets = walletManager.wallets.length;
+        let completedWallets = 0;
+        let errorCount = 0;
         
-        const walletsWithBalances = await walletManager.checkAllBalances();
+        // Show toast notification
+        uiController.showToast(`Starting balance check for ${totalWallets} wallets...`, 'info');
         
-        uiController.updateWalletsTable(walletsWithBalances);
+        // Progress callback function
+        const onProgress = (walletIndex, status, walletData) => {
+            if (status === 'checking') {
+                // Update UI to show loading state for this wallet
+                uiController.updateSingleWalletRow({ index: walletIndex }, 'checking');
+            } else if (status === 'completed' || status === 'error') {
+                // Update UI with the wallet data
+                uiController.updateSingleWalletRow(walletData, status);
+                
+                completedWallets++;
+                if (status === 'error') {
+                    errorCount++;
+                }
+                
+                // Update totals in real-time
+                const totals = walletManager.getTotals();
+                uiController.updateTotals(totals);
+                
+                // Show progress in console
+                console.log(`Balance check progress: ${completedWallets}/${totalWallets} wallets completed`);
+                
+                // Show completion toast when all wallets are done
+                if (completedWallets === totalWallets) {
+                    const successCount = totalWallets - errorCount;
+                    if (errorCount === 0) {
+                        uiController.showToast(`Balance check completed! All ${totalWallets} wallets updated successfully.`, 'success');
+                    } else {
+                        uiController.showToast(`Balance check completed! ${successCount} successful, ${errorCount} failed.`, 'warning');
+                    }
+                }
+            }
+        };
         
-        // Update totals
-        const totals = walletManager.getTotals();
-        uiController.updateTotals(totals);
+        // Check balances for all wallets concurrently (but with controlled concurrency)
+        const concurrencyLimit = 3; // Check 3 wallets at a time to avoid overwhelming the RPC
+        const walletPromises = [];
         
-        uiController.updateFullscreenLoading('Balance Check Complete!', 'All wallet balances updated', 100);
-        setTimeout(() => uiController.hideFullscreenLoading(), 1000);
+        for (let i = 0; i < walletManager.wallets.length; i += concurrencyLimit) {
+            const batch = walletManager.wallets.slice(i, i + concurrencyLimit);
+            
+            const batchPromises = batch.map(wallet => 
+                walletManager.checkSingleWalletBalance(wallet.index, onProgress)
+                    .catch(error => {
+                        console.error(`Failed to check wallet ${wallet.index}:`, error);
+                        // Return error result to maintain consistency
+                        return {
+                            index: wallet.index,
+                            address: wallet.address,
+                            path: wallet.path,
+                            native_pol_balance: 'error',
+                            usdt_balance: 'error',
+                            timestamp: new Date().toISOString()
+                        };
+                    })
+            );
+            
+            walletPromises.push(...batchPromises);
+            
+            // Wait for current batch to complete before starting next batch
+            await Promise.all(batchPromises);
+            
+            // Small delay between batches to be nice to the RPC
+            if (i + concurrencyLimit < walletManager.wallets.length) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
         
-        uiController.showToast('Balance check completed successfully!', 'success');
+        // Wait for all promises to complete
+        await Promise.all(walletPromises);
+        
+        console.log('Balance check completed for all wallets');
         
     } catch (error) {
         console.error('Error checking balances:', error);
-        uiController.showError(error.message);
         uiController.showToast('Failed to check balances: ' + error.message, 'error');
     }
 }

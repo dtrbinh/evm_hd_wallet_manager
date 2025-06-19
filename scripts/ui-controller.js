@@ -121,6 +121,7 @@ class UIController {
         
         wallets.forEach(wallet => {
             const row = tbody.insertRow();
+            row.id = `wallet-row-${wallet.index}`;
             
             // Format balances
             const polBalance = this.formatBalance(wallet.native_pol_balance);
@@ -134,13 +135,70 @@ class UIController {
                     <span class="address-full">${wallet.address}</span>
                 </td>
                 <td><small>${wallet.path}</small></td>
-                <td class="${this.getBalanceClass(wallet.native_pol_balance)}">${polBalance}</td>
-                <td class="${this.getBalanceClass(wallet.usdt_balance)}">${usdtBalance}</td>
-                <td><small>${timestamp}</small></td>
+                <td class="${this.getBalanceClass(wallet.native_pol_balance)}" id="pol-balance-${wallet.index}">${polBalance}</td>
+                <td class="${this.getBalanceClass(wallet.usdt_balance)}" id="usdt-balance-${wallet.index}">${usdtBalance}</td>
+                <td id="timestamp-${wallet.index}"><small>${timestamp}</small></td>
             `;
         });
         
         document.getElementById('walletsCard').style.display = 'block';
+    }
+
+    /**
+     * Update a single wallet row in the table
+     */
+    updateSingleWalletRow(wallet, status = 'completed') {
+        const row = document.getElementById(`wallet-row-${wallet.index}`);
+        if (!row) return;
+
+        const polBalanceCell = document.getElementById(`pol-balance-${wallet.index}`);
+        const usdtBalanceCell = document.getElementById(`usdt-balance-${wallet.index}`);
+        const timestampCell = document.getElementById(`timestamp-${wallet.index}`);
+
+        if (status === 'checking') {
+            // Show loading state
+            if (polBalanceCell) {
+                polBalanceCell.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                polBalanceCell.className = '';
+            }
+            if (usdtBalanceCell) {
+                usdtBalanceCell.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                usdtBalanceCell.className = '';
+            }
+            if (timestampCell) {
+                timestampCell.innerHTML = '<small>Checking...</small>';
+            }
+            
+            // Add loading animation to row
+            row.classList.add('table-warning');
+        } else {
+            // Update with actual data
+            const polBalance = this.formatBalance(wallet.native_pol_balance);
+            const usdtBalance = this.formatBalance(wallet.usdt_balance);
+            const timestamp = wallet.timestamp ? new Date(wallet.timestamp).toLocaleString() : 'Never';
+
+            if (polBalanceCell) {
+                polBalanceCell.textContent = polBalance;
+                polBalanceCell.className = this.getBalanceClass(wallet.native_pol_balance);
+            }
+            if (usdtBalanceCell) {
+                usdtBalanceCell.textContent = usdtBalance;
+                usdtBalanceCell.className = this.getBalanceClass(wallet.usdt_balance);
+            }
+            if (timestampCell) {
+                timestampCell.innerHTML = `<small>${timestamp}</small>`;
+            }
+
+            // Remove loading state and add success/error state
+            row.classList.remove('table-warning');
+            if (status === 'completed') {
+                row.classList.add('table-success');
+                setTimeout(() => row.classList.remove('table-success'), 2000);
+            } else if (status === 'error') {
+                row.classList.add('table-danger');
+                setTimeout(() => row.classList.remove('table-danger'), 3000);
+            }
+        }
     }
 
     /**
