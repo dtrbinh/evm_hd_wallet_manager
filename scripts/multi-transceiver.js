@@ -245,6 +245,11 @@ class MultiTransceiver {
             
             console.log(`Multi-transaction completed: ${successfulTransactions} successful, ${failedTransactions} failed`);
             
+            // Complete the progress dialog
+            if (window.uiController && window.uiController.completeTransactionProgress) {
+                window.uiController.completeTransactionProgress();
+            }
+            
             return {
                 transactions,
                 successfulTransactions,
@@ -254,6 +259,12 @@ class MultiTransceiver {
             
         } catch (error) {
             console.error(`Error executing multi-transaction: ${error.message}`);
+            
+            // Complete the progress dialog with error state
+            if (window.uiController && window.uiController.completeTransactionProgress) {
+                window.uiController.completeTransactionProgress(true, error.message);
+            }
+            
             throw error;
         }
     }

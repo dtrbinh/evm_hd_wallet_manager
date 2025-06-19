@@ -114,54 +114,7 @@ class UIController {
         document.getElementById('walletCount').value = count;
     }
 
-    /**
-     * Show/hide progress card
-     */
-    showProgress(message, percentage = null) {
-        const progressCard = document.getElementById('progressCard');
-        const progressBar = document.getElementById('progressBar');
-        const progressPercent = document.getElementById('progressPercent');
-        const currentStep = document.getElementById('currentStep');
-        const statusMessage = document.getElementById('statusMessage');
-        const errorMessage = document.getElementById('errorMessage');
-        
-        progressCard.style.display = 'block';
-        currentStep.textContent = message;
-        
-        if (percentage !== null) {
-            progressBar.style.width = percentage + '%';
-            progressPercent.textContent = percentage + '%';
-        }
-        
-        statusMessage.style.display = 'block';
-        statusMessage.textContent = message;
-        errorMessage.style.display = 'none';
-    }
 
-    /**
-     * Hide progress card
-     */
-    hideProgress() {
-        setTimeout(() => {
-            document.getElementById('progressCard').style.display = 'none';
-        }, 2000);
-    }
-
-    /**
-     * Show error message
-     */
-    showError(error) {
-        const progressCard = document.getElementById('progressCard');
-        const statusMessage = document.getElementById('statusMessage');
-        const errorMessage = document.getElementById('errorMessage');
-        
-        progressCard.style.display = 'block';
-        statusMessage.style.display = 'none';
-        errorMessage.style.display = 'block';
-        errorMessage.textContent = 'Error: ' + error;
-        
-        this.hideProgress();
-    }
 
     /**
      * Update wallets table
@@ -629,7 +582,6 @@ class UIController {
         }
         
         // Reset progress
-        this.hideProgress();
         this.hideFullscreenLoading();
         
         console.log('Display cleared for network switch');
@@ -786,7 +738,7 @@ class UIController {
     /**
      * Complete transaction progress
      */
-    completeTransactionProgress() {
+    completeTransactionProgress(isError = false, errorMessage = null) {
         if (!this.transactionProgressState) return;
         
         const current = document.getElementById('transactionProgressCurrent');
@@ -797,23 +749,38 @@ class UIController {
         
         const { successful, failed, totalTransactions } = this.transactionProgressState;
         
-        // Update final state
-        current.innerHTML = '<i class="fas fa-check-circle text-success"></i> Transaction process completed!';
-        details.textContent = `Completed: ${successful} successful, ${failed} failed out of ${totalTransactions} transactions`;
-        progressText.textContent = '100%';
-        progressBar.style.width = '100%';
+        if (isError) {
+            // Update error state
+            current.innerHTML = '<i class="fas fa-exclamation-circle text-danger"></i> Transaction process failed!';
+            details.textContent = errorMessage || 'An error occurred during transaction processing';
+            
+            // Update minimized view
+            const minimizedText = document.getElementById('transactionProgressMinimizedText');
+            if (minimizedText) {
+                minimizedText.textContent = 'Transaction failed';
+            }
+            
+            // Add error log entry
+            this.addTransactionProgressLog('error', `Process failed: ${errorMessage || 'Unknown error'}`);
+        } else {
+            // Update final state
+            current.innerHTML = '<i class="fas fa-check-circle text-success"></i> Transaction process completed!';
+            details.textContent = `Completed: ${successful} successful, ${failed} failed out of ${totalTransactions} transactions`;
+            progressText.textContent = '100%';
+            progressBar.style.width = '100%';
+            
+            // Update minimized view
+            const minimizedText = document.getElementById('transactionProgressMinimizedText');
+            if (minimizedText) {
+                minimizedText.textContent = `Completed: ${successful}/${totalTransactions} successful`;
+            }
+            
+            // Add final log entry
+            this.addTransactionProgressLog('info', `Process completed: ${successful} successful, ${failed} failed`);
+        }
         
         // Enable close button, disable cancel
         if (cancelBtn) cancelBtn.disabled = true;
-        
-        // Update minimized view
-        const minimizedText = document.getElementById('transactionProgressMinimizedText');
-        if (minimizedText) {
-            minimizedText.textContent = `Completed: ${successful}/${totalTransactions} successful`;
-        }
-        
-        // Add final log entry
-        this.addTransactionProgressLog('info', `Process completed: ${successful} successful, ${failed} failed`);
         
         // Auto-hide after 5 seconds if minimized
         if (this.transactionProgressState.isMinimized) {

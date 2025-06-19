@@ -18,9 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     uiController = new UIController();
     uiController.initialize();
     
-    // Set up global progress update function
+    // Set up global progress update function (deprecated - using full-screen loading now)
     window.updateProgressMessage = function(message) {
-        uiController.showProgress(message);
+        console.log('Progress:', message);
     };
     
     // Initialize network display
@@ -80,7 +80,7 @@ async function initializeWalletManager() {
         
     } catch (error) {
         console.error('Initialization error:', error);
-        uiController.showError(error.message);
+        uiController.hideFullscreenLoading();
         uiController.showToast('Initialization failed: ' + error.message, 'error');
     }
 }
@@ -130,7 +130,7 @@ async function generateWallets() {
         
     } catch (error) {
         console.error('Error generating wallets:', error);
-        uiController.showError(error.message);
+        uiController.hideFullscreenLoading();
         uiController.showToast('Failed to generate wallets: ' + error.message, 'error');
     }
 }
@@ -379,9 +379,6 @@ async function executeMultiTransaction() {
         
         const result = await multiTransceiver.executeMultiTransaction(params);
         
-        // Complete the progress dialog
-        uiController.completeTransactionProgress();
-        
         // Update transaction history
         uiController.updateTransactionHistoryTable(multiTransceiver.getTransactionHistory());
         
@@ -399,7 +396,6 @@ async function executeMultiTransaction() {
             uiController.hideTransactionProgress();
         }
         
-        uiController.showError(error.message);
         uiController.showToast('Transaction failed: ' + error.message, 'error');
     } finally {
         document.getElementById('executeTransactionBtn').disabled = false;
@@ -417,13 +413,9 @@ async function saveToExcel() {
             return;
         }
         
-        uiController.showProgress('Generating Excel file...', 80);
-        
         const result = walletManager.exportToExcel();
         
         if (result.success) {
-            uiController.showProgress('Excel file saved successfully!', 100);
-            uiController.hideProgress();
             uiController.showToast(`Excel file saved: ${result.filename}`, 'success');
         } else {
             throw new Error(result.error);
@@ -431,7 +423,6 @@ async function saveToExcel() {
         
     } catch (error) {
         console.error('Error saving Excel:', error);
-        uiController.showError(error.message);
         uiController.showToast('Failed to save Excel file: ' + error.message, 'error');
     }
 }
@@ -623,7 +614,7 @@ async function toggleNetwork() {
         networkSwitch.checked = !networkSwitch.checked;
         
         if (uiController) {
-            uiController.showError(error.message);
+            uiController.hideFullscreenLoading();
             uiController.showToast('Failed to switch network: ' + error.message, 'error');
         } else {
             alert('Failed to switch network: ' + error.message);
