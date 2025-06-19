@@ -115,7 +115,7 @@
                             <div class="col-md-3">
                                 <label class="form-label">&nbsp;</label>
                                 <div class="form-text">
-                                    <small>Path: m/44'/60'/0'/0/{index}</small>
+                                    <small id="derivationPathDisplay">Path: m/44'/60'/0'/0/{index}</small>
                                 </div>
                             </div>
                         </div>
@@ -422,9 +422,33 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     
     <!-- Custom Scripts -->
+    <script src="scripts/constants.js"></script>
     <script src="scripts/wallet-manager.js"></script>
     <script src="scripts/multi-transceiver.js"></script>
     <script src="scripts/ui-controller.js"></script>
     <script src="scripts/main.js"></script>
+    
+    <!-- Initialize default values from constants -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update default wallet count
+            const walletCountInput = document.getElementById('walletCount');
+            const endIndexInput = document.getElementById('endIndex');
+            if (walletCountInput && endIndexInput) {
+                const defaultCount = APP_SETTINGS.defaultWalletCount;
+                walletCountInput.value = defaultCount;
+                endIndexInput.value = defaultCount - 1;
+            }
+            
+            // Update derivation path display
+            const derivationPathDisplay = document.getElementById('derivationPathDisplay');
+            if (derivationPathDisplay) {
+                derivationPathDisplay.textContent = `Path: ${APP_SETTINGS.derivationPathPrefix}{index}`;
+            }
+            
+            // Initialize network display
+            updateNetworkDisplay();
+        });
+    </script>
 </body>
 </html> 

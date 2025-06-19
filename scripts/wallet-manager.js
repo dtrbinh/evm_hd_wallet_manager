@@ -8,59 +8,20 @@ class HDWalletManager {
         this.wallets = [];
         this.isInitialized = false;
         this.seedPhrase = '';
-        this.currentNetwork = 'mainnet'; // 'mainnet' or 'testnet'
+        this.currentNetwork = DEFAULT_NETWORK;
         
-        // Network configurations
-        this.networks = {
-            mainnet: {
-                name: 'Polygon Mainnet',
-                rpcUrl: 'https://polygon-rpc.com',
-                chainId: 137,
-                usdtAddress: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
-                explorerUrl: 'https://polygonscan.com'
-            },
-            testnet: {
-                name: 'Polygon Amoy Testnet',
-                rpcUrl: 'https://rpc-amoy.polygon.technology',
-                chainId: 80002,
-                usdtAddress: '0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582', // Mock USDT on testnet
-                explorerUrl: 'https://amoy.polygonscan.com'
-            }
-        };
+        // Use centralized network configurations
+        this.networks = NETWORKS;
         
         // Current network config
         this.rpcUrl = this.networks[this.currentNetwork].rpcUrl;
         this.usdtAddress = this.networks[this.currentNetwork].usdtAddress;
         
-        // ERC20 ABI (minimal for balance and transfer)
-        this.erc20Abi = [
-            {
-                "constant": true,
-                "inputs": [{"name": "_owner", "type": "address"}],
-                "name": "balanceOf",
-                "outputs": [{"name": "balance", "type": "uint256"}],
-                "type": "function"
-            },
-            {
-                "constant": false,
-                "inputs": [
-                    {"name": "_to", "type": "address"},
-                    {"name": "_value", "type": "uint256"}
-                ],
-                "name": "transfer",
-                "outputs": [{"name": "", "type": "bool"}],
-                "type": "function"
-            },
-            {
-                "constant": true,
-                "inputs": [],
-                "name": "decimals",
-                "outputs": [{"name": "", "type": "uint8"}],
-                "type": "function"
-            }
-        ];
+        // Use centralized ERC20 ABI
+        this.erc20Abi = ERC20_ABI;
         
-        this.gasPriceMultiplier = 1.2; // 20% buffer for gas price
+        // Use centralized app settings
+        this.gasPriceMultiplier = APP_SETTINGS.gasPriceMultiplier;
     }
 
     /**
@@ -192,7 +153,7 @@ class HDWalletManager {
 
             // Generate wallets
             for (let i = startIndex; i <= endIndex; i++) {
-                const derivationPath = `m/44'/60'/0'/0/${i}`;
+                const derivationPath = `${APP_SETTINGS.derivationPathPrefix}${i}`;
                 const wallet = ethers.HDNodeWallet.fromMnemonic(mnemonic, derivationPath);
                 
                 const privateKey = wallet.privateKey;

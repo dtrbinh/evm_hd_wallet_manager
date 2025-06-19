@@ -373,7 +373,7 @@ class UIController {
                               tx.status === 'failed' ? 'text-danger' : 'text-warning';
             
             // Get explorer URL based on current network
-            let explorerUrl = 'https://polygonscan.com';
+            let explorerUrl = NETWORKS.mainnet.explorerUrl; // Default to mainnet
             if (window.walletManager && window.walletManager.getCurrentNetwork) {
                 explorerUrl = window.walletManager.getCurrentNetwork().explorerUrl;
             }

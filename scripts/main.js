@@ -599,17 +599,14 @@ function updateNetworkDisplay() {
         currentChainIdEl.textContent = `Chain ID: ${network.chainId}`;
     } else {
         // Default display when no wallet manager
-        if (isTestnet) {
-            currentNetworkEl.innerHTML = '<i class="fas fa-flask me-1"></i>Polygon Amoy Testnet';
-            currentNetworkEl.className = 'badge bg-testnet';
-            currentRPCEl.textContent = 'https://rpc-amoy.polygon.technology';
-            currentChainIdEl.textContent = 'Chain ID: 80002';
-        } else {
-            currentNetworkEl.innerHTML = '<i class="fas fa-globe me-1"></i>Polygon Mainnet';
-            currentNetworkEl.className = 'badge bg-mainnet';
-            currentRPCEl.textContent = 'https://polygon-rpc.com';
-            currentChainIdEl.textContent = 'Chain ID: 137';
-        }
+        const networkKey = isTestnet ? 'testnet' : 'mainnet';
+        const networkConfig = NETWORKS[networkKey];
+        const icon = isTestnet ? 'fas fa-flask' : 'fas fa-globe';
+        
+        currentNetworkEl.innerHTML = `<i class="${icon} me-1"></i>${networkConfig.name}`;
+        currentNetworkEl.className = `badge ${isTestnet ? 'bg-testnet' : 'bg-mainnet'}`;
+        currentRPCEl.textContent = networkConfig.rpcUrl;
+        currentChainIdEl.textContent = `Chain ID: ${networkConfig.chainId}`;
     }
 }
 
