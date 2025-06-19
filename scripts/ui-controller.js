@@ -37,6 +37,57 @@ class UIController {
                 this.updateTransactionSummary();
             }
         });
+        
+        // Setup transaction progress event listeners
+        this.setupTransactionProgressEventListeners();
+    }
+
+    /**
+     * Setup transaction progress dialog event listeners
+     */
+    setupTransactionProgressEventListeners() {
+        // Close button
+        const closeBtn = document.getElementById('transactionProgressClose');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.hideTransactionProgress();
+            });
+        }
+        
+        // Minimize button
+        const minimizeBtn = document.getElementById('transactionProgressMinimize');
+        if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', () => {
+                this.minimizeTransactionProgress();
+            });
+        }
+        
+        // Minimized view click to restore
+        const minimizedView = document.getElementById('transactionProgressMinimized');
+        if (minimizedView) {
+            minimizedView.addEventListener('click', () => {
+                this.showTransactionProgressFromMinimized();
+            });
+        }
+        
+        // Cancel button (placeholder for future implementation)
+        const cancelBtn = document.getElementById('transactionProgressCancel');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                // TODO: Implement transaction cancellation
+                console.log('Transaction cancellation not yet implemented');
+            });
+        }
+        
+        // Close on overlay click (outside dialog)
+        const overlay = document.getElementById('transactionProgressOverlay');
+        if (overlay) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    this.hideTransactionProgress();
+                }
+            });
+        }
     }
 
     /**
@@ -372,20 +423,43 @@ class UIController {
             const statusClass = tx.status === 'success' ? 'text-success' : 
                               tx.status === 'failed' ? 'text-danger' : 'text-warning';
             
-            // Get explorer URL based on current network
+            // Get explorer URL based on transaction's network (chainId)
             let explorerUrl = NETWORKS.mainnet.explorerUrl; // Default to mainnet
-            if (window.walletManager && window.walletManager.getCurrentNetwork) {
-                explorerUrl = window.walletManager.getCurrentNetwork().explorerUrl;
+            
+            if (tx.chainId) {
+                // Find the correct network based on chainId
+                if (tx.chainId === 137) {
+                    explorerUrl = NETWORKS.mainnet.explorerUrl;
+                } else if (tx.chainId === 80002) {
+                    explorerUrl = NETWORKS.testnet.explorerUrl;
+                } else {
+                    // Try to find by chainId in NETWORKS object
+                    const networkKey = Object.keys(NETWORKS).find(key => 
+                        NETWORKS[key].chainId === tx.chainId
+                    );
+                    if (networkKey) {
+                        explorerUrl = NETWORKS[networkKey].explorerUrl;
+                    }
+                }
+                console.log(`Transaction ${tx.tx_hash ? tx.tx_hash.substring(0, 10) : 'N/A'}: Chain ID ${tx.chainId} → Explorer: ${explorerUrl}`);
+            } else if (tx.network) {
+                // Fallback: determine by network name
+                if (tx.network.includes('Testnet') || tx.network.includes('Amoy')) {
+                    explorerUrl = NETWORKS.testnet.explorerUrl;
+                } else if (tx.network.includes('Mainnet') || tx.network.includes('Polygon')) {
+                    explorerUrl = NETWORKS.mainnet.explorerUrl;
+                }
+                console.log(`Transaction ${tx.tx_hash ? tx.tx_hash.substring(0, 10) : 'N/A'}: Network ${tx.network} → Explorer: ${explorerUrl}`);
             }
             
             const txHashDisplay = tx.tx_hash ? 
-                `<a href="${explorerUrl}/tx/${tx.tx_hash}" target="_blank" class="text-decoration-none">
+                `<a href="${explorerUrl}/tx/${tx.tx_hash}" target="_blank" class="text-decoration-none" title="View on ${explorerUrl.includes('amoy') ? 'Amoy Testnet' : 'Polygon'} Explorer">
                     ${tx.tx_hash.substring(0, 10)}...
                 </a>` : 'N/A';
             
             // Network badge for transaction
             const networkBadge = tx.network ? 
-                `<span class="badge ${tx.network.includes('Testnet') ? 'bg-testnet' : 'bg-mainnet'}" style="font-size: 10px;">
+                `<span class="badge ${tx.network.includes('Testnet') ? 'bg-testnet' : 'bg-mainnet'}" style="font-size: 10px;" title="Chain ID: ${tx.chainId || 'Unknown'}">
                     ${tx.network.includes('Testnet') ? 'Testnet' : 'Mainnet'}
                 </span>` : 
                 '<span class="badge bg-secondary" style="font-size: 10px;">Unknown</span>';
@@ -601,6 +675,220 @@ class UIController {
         if (overlay) {
             overlay.classList.remove('show');
         }
+    }
+
+    /**
+     * Show transaction progress dialog
+     */
+    showTransactionProgress(mode, totalTransactions) {
+        const overlay = document.getElementById('transactionProgressOverlay');
+        const title = document.querySelector('.transaction-progress-title');
+        const current = document.getElementById('transactionProgressCurrent');
+        const details = document.getElementById('transactionProgressDetails');
+        const progressText = document.getElementById('transactionProgressText');
+        const progressCount = document.getElementById('transactionProgressCount');
+        const progressBar = document.getElementById('transactionProgressBarFill');
+        
+        // Reset stats
+        document.getElementById('transactionProgressSuccessful').textContent = '0';
+        document.getElementById('transactionProgressFailed').textContent = '0';
+        document.getElementById('transactionProgressGasFee').textContent = '0.000';
+        
+        // Clear log
+        const log = document.getElementById('transactionProgressLog');
+        log.innerHTML = '';
+        
+        // Set initial state
+        title.innerHTML = `<i class="fas fa-exchange-alt"></i> ${mode === 'multi-send' ? 'Multi-Send' : 'Multi-Receive'} Progress`;
+        current.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing transactions...';
+        details.textContent = `Initializing ${mode} process for ${totalTransactions} transactions`;
+        progressText.textContent = '0%';
+        progressCount.textContent = `0 / ${totalTransactions}`;
+        progressBar.style.width = '0%';
+        
+        // Show overlay
+        overlay.classList.add('show');
+        
+        // Add log entry
+        this.addTransactionProgressLog('info', 'Transaction process started');
+        
+        // Store state
+        this.transactionProgressState = {
+            mode,
+            totalTransactions,
+            currentTransaction: 0,
+            successful: 0,
+            failed: 0,
+            totalGas: 0,
+            isMinimized: false
+        };
+    }
+
+    /**
+     * Update transaction progress
+     */
+    updateTransactionProgress(message, details = '', transactionIndex = null) {
+        if (!this.transactionProgressState) return;
+        
+        const current = document.getElementById('transactionProgressCurrent');
+        const detailsEl = document.getElementById('transactionProgressDetails');
+        const progressText = document.getElementById('transactionProgressText');
+        const progressCount = document.getElementById('transactionProgressCount');
+        const progressBar = document.getElementById('transactionProgressBarFill');
+        
+        // Update current transaction index if provided
+        if (transactionIndex !== null) {
+            this.transactionProgressState.currentTransaction = transactionIndex;
+        }
+        
+        // Calculate progress
+        const progress = Math.round((this.transactionProgressState.currentTransaction / this.transactionProgressState.totalTransactions) * 100);
+        
+        // Update UI
+        current.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${message}`;
+        detailsEl.textContent = details;
+        progressText.textContent = `${progress}%`;
+        progressCount.textContent = `${this.transactionProgressState.currentTransaction} / ${this.transactionProgressState.totalTransactions}`;
+        progressBar.style.width = `${progress}%`;
+        
+        // Update minimized view
+        const minimizedText = document.getElementById('transactionProgressMinimizedText');
+        if (minimizedText) {
+            minimizedText.textContent = `${message} (${progress}%)`;
+        }
+        
+        // Add log entry
+        this.addTransactionProgressLog('info', `${message} - ${details}`);
+    }
+
+    /**
+     * Update transaction result
+     */
+    updateTransactionResult(success, txHash, gasFee, error = null) {
+        if (!this.transactionProgressState) return;
+        
+        if (success) {
+            this.transactionProgressState.successful++;
+            this.addTransactionProgressLog('success', `Transaction successful: ${txHash ? txHash.substring(0, 20) + '...' : 'N/A'}`);
+        } else {
+            this.transactionProgressState.failed++;
+            this.addTransactionProgressLog('error', `Transaction failed: ${error || 'Unknown error'}`);
+        }
+        
+        this.transactionProgressState.totalGas += gasFee;
+        
+        // Update stats
+        document.getElementById('transactionProgressSuccessful').textContent = this.transactionProgressState.successful;
+        document.getElementById('transactionProgressFailed').textContent = this.transactionProgressState.failed;
+        document.getElementById('transactionProgressGasFee').textContent = this.transactionProgressState.totalGas.toFixed(6);
+    }
+
+    /**
+     * Complete transaction progress
+     */
+    completeTransactionProgress() {
+        if (!this.transactionProgressState) return;
+        
+        const current = document.getElementById('transactionProgressCurrent');
+        const details = document.getElementById('transactionProgressDetails');
+        const progressText = document.getElementById('transactionProgressText');
+        const progressBar = document.getElementById('transactionProgressBarFill');
+        const cancelBtn = document.getElementById('transactionProgressCancel');
+        
+        const { successful, failed, totalTransactions } = this.transactionProgressState;
+        
+        // Update final state
+        current.innerHTML = '<i class="fas fa-check-circle text-success"></i> Transaction process completed!';
+        details.textContent = `Completed: ${successful} successful, ${failed} failed out of ${totalTransactions} transactions`;
+        progressText.textContent = '100%';
+        progressBar.style.width = '100%';
+        
+        // Enable close button, disable cancel
+        if (cancelBtn) cancelBtn.disabled = true;
+        
+        // Update minimized view
+        const minimizedText = document.getElementById('transactionProgressMinimizedText');
+        if (minimizedText) {
+            minimizedText.textContent = `Completed: ${successful}/${totalTransactions} successful`;
+        }
+        
+        // Add final log entry
+        this.addTransactionProgressLog('info', `Process completed: ${successful} successful, ${failed} failed`);
+        
+        // Auto-hide after 5 seconds if minimized
+        if (this.transactionProgressState.isMinimized) {
+            setTimeout(() => {
+                this.hideTransactionProgressMinimized();
+            }, 5000);
+        }
+    }
+
+    /**
+     * Add log entry to transaction progress
+     */
+    addTransactionProgressLog(type, message) {
+        const log = document.getElementById('transactionProgressLog');
+        if (!log) return;
+        
+        const entry = document.createElement('div');
+        entry.className = `transaction-progress-log-entry ${type}`;
+        
+        const timestamp = new Date().toLocaleTimeString();
+        const typeLabel = type.toUpperCase();
+        entry.innerHTML = `<strong>[${typeLabel}]</strong> ${timestamp}: ${message}`;
+        
+        log.appendChild(entry);
+        log.scrollTop = log.scrollHeight; // Auto-scroll to bottom
+    }
+
+    /**
+     * Hide transaction progress dialog
+     */
+    hideTransactionProgress() {
+        const overlay = document.getElementById('transactionProgressOverlay');
+        if (overlay) {
+            overlay.classList.remove('show');
+        }
+        this.transactionProgressState = null;
+    }
+
+    /**
+     * Minimize transaction progress dialog
+     */
+    minimizeTransactionProgress() {
+        const overlay = document.getElementById('transactionProgressOverlay');
+        const minimized = document.getElementById('transactionProgressMinimized');
+        
+        if (overlay) overlay.classList.remove('show');
+        if (minimized) minimized.style.display = 'flex';
+        
+        if (this.transactionProgressState) {
+            this.transactionProgressState.isMinimized = true;
+        }
+    }
+
+    /**
+     * Show transaction progress from minimized state
+     */
+    showTransactionProgressFromMinimized() {
+        const overlay = document.getElementById('transactionProgressOverlay');
+        const minimized = document.getElementById('transactionProgressMinimized');
+        
+        if (minimized) minimized.style.display = 'none';
+        if (overlay) overlay.classList.add('show');
+        
+        if (this.transactionProgressState) {
+            this.transactionProgressState.isMinimized = false;
+        }
+    }
+
+    /**
+     * Hide minimized transaction progress
+     */
+    hideTransactionProgressMinimized() {
+        const minimized = document.getElementById('transactionProgressMinimized');
+        if (minimized) minimized.style.display = 'none';
+        this.transactionProgressState = null;
     }
 
     /**

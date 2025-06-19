@@ -370,30 +370,35 @@ async function executeMultiTransaction() {
         document.getElementById('executeTransactionBtn').disabled = true;
         document.getElementById('executeTransactionBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
         
-        uiController.showProgress('Executing multi-transaction...', 10);
+        // Show transaction progress dialog
+        uiController.showTransactionProgress(mode, selectedWallets.length);
+        
+        // Close the multi-transceiver modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('multiTransceiverModal'));
+        modal.hide();
         
         const result = await multiTransceiver.executeMultiTransaction(params);
         
-        uiController.showProgress('Multi-transaction completed!', 100);
+        // Complete the progress dialog
+        uiController.completeTransactionProgress();
         
         // Update transaction history
         uiController.updateTransactionHistoryTable(multiTransceiver.getTransactionHistory());
         
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('multiTransceiverModal'));
-        modal.hide();
-        
         // Refresh balances
         await checkBalances();
         
-        uiController.hideProgress();
-        
         const successMessage = `Multi-transaction completed!\nSuccessful: ${result.successfulTransactions}\nFailed: ${result.failedTransactions}\nTotal gas used: ${result.totalGasUsed.toFixed(6)} POL`;
-        uiController.showToast('Multi-transaction completed successfully!', 'success');
-        alert(successMessage);
+        uiController.showToast(`Multi-transaction completed: ${result.successfulTransactions}/${selectedWallets.length} successful`, 'success');
         
     } catch (error) {
         console.error('Transaction execution error:', error);
+        
+        // Hide progress dialog on error
+        if (uiController.transactionProgressState) {
+            uiController.hideTransactionProgress();
+        }
+        
         uiController.showError(error.message);
         uiController.showToast('Transaction failed: ' + error.message, 'error');
     } finally {

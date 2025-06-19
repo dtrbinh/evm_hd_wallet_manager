@@ -586,6 +586,311 @@
     width: 0%;
 }
 
+/* Full-screen transaction progress dialog */
+.transaction-progress-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10001;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.transaction-progress-overlay.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.transaction-progress-dialog {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    color: white;
+    position: relative;
+    animation: slideInScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes slideInScale {
+    0% {
+        transform: scale(0.7) translateY(50px);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+.transaction-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.transaction-progress-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.transaction-progress-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.2rem;
+}
+
+.transaction-progress-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.transaction-progress-body {
+    margin-bottom: 1.5rem;
+}
+
+.transaction-progress-status {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    backdrop-filter: blur(10px);
+}
+
+.transaction-progress-current {
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.transaction-progress-current i {
+    color: #ffd700;
+    animation: pulse 1.5s infinite;
+}
+
+.transaction-progress-details {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-bottom: 1rem;
+}
+
+.transaction-progress-bar-container {
+    margin-bottom: 1rem;
+}
+
+.transaction-progress-bar {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.transaction-progress-bar-fill {
+    background: linear-gradient(90deg, #ffd700, #ffed4e);
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.transaction-progress-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.transaction-progress-stat {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem;
+    text-align: center;
+    backdrop-filter: blur(5px);
+}
+
+.transaction-progress-stat-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.transaction-progress-stat-label {
+    font-size: 0.8rem;
+    opacity: 0.8;
+}
+
+.transaction-progress-log {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.transaction-progress-log-entry {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+    border-left: 3px solid transparent;
+    padding-left: 0.5rem;
+}
+
+.transaction-progress-log-entry.success {
+    border-left-color: #28a745;
+    color: #90ee90;
+}
+
+.transaction-progress-log-entry.error {
+    border-left-color: #dc3545;
+    color: #ffb3b3;
+}
+
+.transaction-progress-log-entry.info {
+    border-left-color: #17a2b8;
+    color: #87ceeb;
+}
+
+.transaction-progress-log-entry.warning {
+    border-left-color: #ffc107;
+    color: #ffeb3b;
+}
+
+.transaction-progress-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.transaction-progress-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.transaction-progress-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.transaction-progress-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.transaction-progress-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.transaction-progress-minimized {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50px;
+    padding: 1rem 1.5rem;
+    color: white;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 9998;
+    animation: bounceIn 0.5s ease;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.transaction-progress-minimized:hover {
+    transform: scale(1.05);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Mobile responsiveness for transaction progress */
+@media (max-width: 768px) {
+    .transaction-progress-dialog {
+        width: 95%;
+        padding: 1.5rem;
+        max-height: 90vh;
+    }
+    
+    .transaction-progress-title {
+        font-size: 1.3rem;
+    }
+    
+    .transaction-progress-stats {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .transaction-progress-log {
+        max-height: 150px;
+        font-size: 0.8rem;
+    }
+    
+    .transaction-progress-minimized {
+        bottom: 15px;
+        right: 15px;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
     width: 8px;

@@ -23,6 +23,85 @@
         </div>
     </div>
 
+    <!-- Transaction Progress Dialog -->
+    <div id="transactionProgressOverlay" class="transaction-progress-overlay">
+        <div class="transaction-progress-dialog">
+            <div class="transaction-progress-header">
+                <h3 class="transaction-progress-title">
+                    <i class="fas fa-exchange-alt"></i>
+                    Multi-Transaction Progress
+                </h3>
+                <button class="transaction-progress-close" id="transactionProgressClose">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="transaction-progress-body">
+                <div class="transaction-progress-status">
+                    <div class="transaction-progress-current" id="transactionProgressCurrent">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        Preparing transactions...
+                    </div>
+                    <div class="transaction-progress-details" id="transactionProgressDetails">
+                        Initializing multi-transaction process
+                    </div>
+                </div>
+                
+                <div class="transaction-progress-bar-container">
+                    <div class="transaction-progress-bar">
+                        <div class="transaction-progress-bar-fill" id="transactionProgressBarFill" style="width: 0%"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; opacity: 0.8;">
+                        <span id="transactionProgressText">0%</span>
+                        <span id="transactionProgressCount">0 / 0</span>
+                    </div>
+                </div>
+                
+                <div class="transaction-progress-stats">
+                    <div class="transaction-progress-stat">
+                        <div class="transaction-progress-stat-value" id="transactionProgressSuccessful">0</div>
+                        <div class="transaction-progress-stat-label">Successful</div>
+                    </div>
+                    <div class="transaction-progress-stat">
+                        <div class="transaction-progress-stat-value" id="transactionProgressFailed">0</div>
+                        <div class="transaction-progress-stat-label">Failed</div>
+                    </div>
+                    <div class="transaction-progress-stat">
+                        <div class="transaction-progress-stat-value" id="transactionProgressGasFee">0.000</div>
+                        <div class="transaction-progress-stat-label">Gas Used (POL)</div>
+                    </div>
+                </div>
+                
+                <div class="transaction-progress-log" id="transactionProgressLog">
+                    <div class="transaction-progress-log-entry info">
+                        <strong>[INFO]</strong> Transaction progress will be displayed here...
+                    </div>
+                </div>
+            </div>
+            
+            <div class="transaction-progress-footer">
+                <div class="transaction-progress-actions">
+                    <button class="transaction-progress-btn" id="transactionProgressMinimize">
+                        <i class="fas fa-minus"></i> Minimize
+                    </button>
+                    <button class="transaction-progress-btn" id="transactionProgressCancel" disabled>
+                        <i class="fas fa-stop"></i> Cancel
+                    </button>
+                </div>
+                <div style="font-size: 0.8rem; opacity: 0.8;">
+                    Closing this dialog won't stop the transactions
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Progress Minimized -->
+    <div id="transactionProgressMinimized" class="transaction-progress-minimized" style="display: none;">
+        <i class="fas fa-exchange-alt"></i>
+        <span id="transactionProgressMinimizedText">Processing transactions...</span>
+        <i class="fas fa-spinner fa-spin"></i>
+    </div>
+
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">

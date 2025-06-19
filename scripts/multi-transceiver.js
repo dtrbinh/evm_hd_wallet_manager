@@ -114,7 +114,8 @@ class MultiTransceiver {
                     throw new Error('Sender wallet not found');
                 }
                 
-                for (const receiverIndex of selectedWallets) {
+                for (let i = 0; i < selectedWallets.length; i++) {
+                    const receiverIndex = selectedWallets[i];
                     const receiver = this.walletManager.getWallet(receiverIndex);
                     if (!receiver) {
                         console.warn(`Receiver wallet ${receiverIndex} not found, skipping`);
@@ -122,7 +123,7 @@ class MultiTransceiver {
                     }
                     
                     // Show progress
-                    this.updateProgress(`Sending ${amount} ${token} to wallet ${receiver.index}...`);
+                    this.updateProgress(`Sending ${amount} ${token} to wallet ${receiver.index}...`, `Transaction ${i + 1}/${selectedWallets.length}`, i + 1);
                     
                     const txResult = await this.walletManager.executeTransaction(
                         sender.index, 
@@ -151,16 +152,24 @@ class MultiTransceiver {
                     transactions.push(transaction);
                     this.transactionHistory.push(transaction);
                     
+                    // Update progress dialog with result
+                    this.updateTransactionResult(txResult.success, txResult.txHash, txResult.gasFee, txResult.error);
+                    
                     if (txResult.success) {
                         successfulTransactions++;
+                        console.log(`✓ Multi-send transaction ${i + 1} successful: ${txResult.txHash}`);
                     } else {
                         failedTransactions++;
+                        console.error(`✗ Multi-send transaction ${i + 1} failed: ${txResult.error}`);
                     }
                     
                     totalGasUsed += txResult.gasFee;
                     
-                    // Small delay between transactions to avoid nonce issues
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    // Delay between transactions to avoid nonce issues
+                    if (i < selectedWallets.length - 1) { // Don't delay after the last transaction
+                        console.log(`Waiting 1 second before next transaction...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
                 }
                 
             } else if (mode === 'multi-receive') {
@@ -212,6 +221,9 @@ class MultiTransceiver {
                     
                     transactions.push(transaction);
                     this.transactionHistory.push(transaction);
+                    
+                    // Update progress dialog with result
+                    this.updateTransactionResult(txResult.success, txResult.txHash, txResult.gasFee, txResult.error);
                     
                     if (txResult.success) {
                         successfulTransactions++;
@@ -328,11 +340,26 @@ class MultiTransceiver {
     /**
      * Update progress (can be overridden by UI)
      */
-    updateProgress(message) {
+    updateProgress(message, details = '', transactionIndex = null) {
         console.log(`MultiTransceiver: ${message}`);
-        // This method can be overridden by the UI controller
+        
+        // Use UI controller's transaction progress dialog if available
+        if (window.uiController && window.uiController.updateTransactionProgress) {
+            window.uiController.updateTransactionProgress(message, details, transactionIndex);
+        }
+        
+        // Fallback to old method
         if (window.updateProgressMessage) {
             window.updateProgressMessage(message);
+        }
+    }
+
+    /**
+     * Update transaction result in progress dialog
+     */
+    updateTransactionResult(success, txHash, gasFee, error = null) {
+        if (window.uiController && window.uiController.updateTransactionResult) {
+            window.uiController.updateTransactionResult(success, txHash, gasFee, error);
         }
     }
 
