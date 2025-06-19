@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HD Wallet Manager - Polygon Network</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <!-- Header -->
+                <div class="header-section text-center py-4">
+                    <h1 class="display-4 fw-bold text-gradient">
+                        <i class="fas fa-wallet"></i> HD Wallet Manager
+                    </h1>
+                    <p class="lead text-muted">Polygon Network Multi-Wallet Manager</p>
+                </div>
+
+                <!-- Setup Section -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-cog"></i> Setup</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label for="seedPhrase" class="form-label">Seed Phrase (12-24 words)</label>
+                                <textarea class="form-control" id="seedPhrase" rows="3" 
+                                    placeholder="Enter your seed phrase here..."></textarea>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="rpcUrl" class="form-label">RPC URL (Optional)</label>
+                                <input type="text" class="form-control" id="rpcUrl" 
+                                    placeholder="https://polygon-rpc.com">
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button class="btn btn-primary w-100" onclick="initializeWalletManager()">
+                                    <i class="fas fa-play"></i> Initialize
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Derivation Path Settings -->
+                        <div class="row mt-3">
+                            <div class="col-md-3">
+                                <label for="startIndex" class="form-label">Start Index</label>
+                                <input type="number" class="form-control" id="startIndex" value="0" min="0" max="999" onchange="updateWalletCount()">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="endIndex" class="form-label">End Index</label>
+                                <input type="number" class="form-control" id="endIndex" value="9" min="0" max="999" onchange="updateWalletCount()">
+                            </div>
+                            <div class="col-md-3">
+                                <label for="walletCount" class="form-label">Wallet Count</label>
+                                <input type="number" class="form-control" id="walletCount" value="10" readonly>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="form-text">
+                                    <small>Path: m/44'/60'/0'/0/{index}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div class="card mb-4" id="progressCard" style="display: none;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span id="currentStep">Processing...</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 id="progressBar" style="width: 0%"></div>
+                        </div>
+                        <div id="statusMessage" class="text-success" style="display: none;"></div>
+                        <div id="errorMessage" class="text-danger" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <!-- Step Controls -->
+                <div class="card mb-4" id="stepControls" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-tasks"></i> Wallet Operations</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <button class="btn btn-success w-100 mb-2" onclick="generateWallets()">
+                                    <i class="fas fa-plus"></i> 1. Generate Wallets
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary w-100 mb-2" onclick="checkBalances()">
+                                    <i class="fas fa-search"></i> 2. Check Balances
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-warning w-100 mb-2" onclick="openMultiTransceiver()">
+                                    <i class="fas fa-exchange-alt"></i> 3. MultiTransceiver
+                                </button>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-info w-100 mb-2" onclick="saveToExcel()">
+                                    <i class="fas fa-download"></i> 4. Save to Excel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wallets Table -->
+                <div class="card mb-4" id="walletsCard" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-table"></i> HD Wallets</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="walletsTable">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Address</th>
+                                        <th>Derivation Path</th>
+                                        <th>Native POL</th>
+                                        <th>USDT</th>
+                                        <th>Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="walletsTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Totals Summary -->
+                <div class="row mb-4" id="totalsSection" style="display: none;">
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Wallets</h5>
+                                <h3 class="text-primary" id="totalWallets">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Total Native POL</h5>
+                                <h3 class="text-success" id="totalNativePol">0.000000</h3>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <h5 class="card-title">Total USDT</h5>
+                                <h3 class="text-info" id="totalUsdt">0.000000</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction History -->
+                <div class="card" id="transactionHistoryCard" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-history"></i> Transaction History</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="transactionHistoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>From</th>
+                                        <th>To</th>
+                                        <th>Token</th>
+                                        <th>Amount</th>
+                                        <th>Gas Fee</th>
+                                        <th>Status</th>
+                                        <th>TX Hash</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionHistoryBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MultiTransceiver Modal -->
+    <div class="modal fade" id="multiTransceiverModal" tabindex="-1" aria-labelledby="multiTransceiverModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="multiTransceiverModalLabel">
+                        <i class="fas fa-exchange-alt"></i> MultiTransceiver
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Mode Selection -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label class="form-label">Transaction Mode</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="transactionMode" id="multiSendMode" value="multi-send" checked>
+                                <label class="btn btn-outline-primary" for="multiSendMode">
+                                    <i class="fas fa-arrow-right"></i> Multi-Send (1 → Many)
+                                </label>
+                                <input type="radio" class="btn-check" name="transactionMode" id="multiReceiveMode" value="multi-receive">
+                                <label class="btn btn-outline-success" for="multiReceiveMode">
+                                    <i class="fas fa-arrow-left"></i> Multi-Receive (Many → 1)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Send Mode -->
+                    <div id="multiSendSection">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Sender Wallet</label>
+                                <select class="form-select" id="senderWallet">
+                                    <option value="">Select sender wallet...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Token</label>
+                                <select class="form-select" id="tokenToSend">
+                                    <option value="POL">Native POL</option>
+                                    <option value="USDT">USDT</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Amount per Receiver</label>
+                                <input type="number" class="form-control" id="amountPerReceiver" step="0.000001" min="0" placeholder="0.000000">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <label class="form-label">Receiver Wallets</label>
+                                <div id="receiverWallets" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Receiver checkboxes will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Receive Mode -->
+                    <div id="multiReceiveSection" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Receiver Wallet</label>
+                                <select class="form-select" id="receiverWallet">
+                                    <option value="">Select receiver wallet...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Token</label>
+                                <select class="form-select" id="tokenToReceive">
+                                    <option value="POL">Native POL</option>
+                                    <option value="USDT">USDT</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Amount per Sender</label>
+                                <input type="number" class="form-control" id="amountPerSender" step="0.000001" min="0" placeholder="0.000000">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <label class="form-label">Sender Wallets</label>
+                                <div id="senderWallets" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Sender checkboxes will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Summary -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Transaction Summary</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <strong>Selected Wallets:</strong>
+                                            <div id="selectedWalletsCount">0</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Total Amount:</strong>
+                                            <div id="totalAmount">0.000000</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Estimated Gas Fee:</strong>
+                                            <div id="estimatedGasFee">Click Calculate Gas</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Total Cost:</strong>
+                                            <div id="totalCost">0.000000</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="calculateGasBtn" onclick="calculateGasFees()">
+                        <i class="fas fa-calculator"></i> Calculate Gas
+                    </button>
+                    <button type="button" class="btn btn-success" id="executeTransactionBtn" onclick="executeMultiTransaction()" disabled>
+                        <i class="fas fa-paper-plane"></i> Execute Transaction
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Web3.js -->
+    <script src="https://cdn.jsdelivr.net/npm/web3@4.2.0/dist/web3.min.js"></script>
+    <!-- Ethers.js for crypto utilities from cdnjs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.14.4/ethers.umd.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SheetJS for Excel export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Custom Scripts -->
+    <script src="scripts/wallet-manager.js"></script>
+    <script src="scripts/multi-transceiver.js"></script>
+    <script src="scripts/ui-controller.js"></script>
+    <script src="scripts/main.js"></script>
+</body>
+</html> 
