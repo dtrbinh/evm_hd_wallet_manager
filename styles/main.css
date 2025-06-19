@@ -300,18 +300,21 @@
     margin-bottom: 2rem !important;
 }
 
-#totalsSection .row {
+#totalsSection.row {
     display: flex !important;
-    flex-wrap: wrap !important;
-    margin-left: -0.75rem !important;
-    margin-right: -0.75rem !important;
+    flex-wrap: nowrap !important;
+    margin-left: -0.5rem !important;
+    margin-right: -0.5rem !important;
+    gap: 0 !important;
+    justify-content: space-between !important;
 }
 
-#totalsSection .col-md-4 {
-    flex: 0 0 33.333333% !important;
-    max-width: 33.333333% !important;
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
+#totalsSection .col-4 {
+    flex: 0 0 33% !important;
+    max-width: 33% !important;
+    min-width: 33% !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
     margin-bottom: 0 !important;
 }
 
@@ -319,11 +322,12 @@
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
     border: 2px solid #e9ecef;
     height: 100% !important;
-    min-height: 140px !important;
+    min-height: 120px !important;
     display: flex !important;
     flex-direction: column !important;
     transition: all 0.3s ease;
     margin-bottom: 0 !important;
+    width: 100% !important;
 }
 
 #totalsSection .card:hover {
@@ -338,41 +342,67 @@
     justify-content: center !important;
     align-items: center !important;
     flex-grow: 1 !important;
-    padding: 1.5rem !important;
+    padding: 1rem !important;
     text-align: center !important;
 }
 
 #totalsSection .card-title {
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     color: #495057;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #totalsSection h3 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 700;
     margin: 0;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
 }
 
-/* Responsive totals section */
+#totalsSection .mb-2 {
+    margin-bottom: 0.3rem !important;
+}
+
+#totalsSection .mb-2 i {
+    font-size: 1.5rem !important;
+}
+
+/* Responsive totals section - Always keep in one row with 33% width each */
 @media (max-width: 991px) {
-    #totalsSection .col-md-4 {
-        flex: 0 0 33.333333% !important;
-        max-width: 33.333333% !important;
+    #totalsSection .col-4 {
+        flex: 0 0 33% !important;
+        max-width: 33% !important;
+        min-width: 33% !important;
+    }
+    
+    #totalsSection .card-body {
+        padding: 0.8rem !important;
+    }
+    
+    #totalsSection h3 {
+        font-size: 1.3rem;
+    }
+    
+    #totalsSection .mb-2 i {
+        font-size: 1.3rem !important;
     }
 }
 
 @media (max-width: 768px) {
-    #totalsSection .col-md-4 {
-        flex: 0 0 100% !important;
-        max-width: 100% !important;
-        margin-bottom: 1rem !important;
-    }
-    
-    #totalsSection .col-md-4:last-child {
-        margin-bottom: 0 !important;
+    #totalsSection .col-4 {
+        flex: 0 0 30% !important;
+        max-width: 30% !important;
+        min-width: 30% !important;
+        padding-left: 0.3rem !important;
+        padding-right: 0.3rem !important;
     }
     
     #totalsSection .card {
@@ -380,21 +410,70 @@
     }
     
     #totalsSection .card-body {
-        padding: 1rem !important;
+        padding: 0.6rem !important;
+    }
+    
+    #totalsSection .card-title {
+        font-size: 0.8rem;
+        margin-bottom: 0.3rem;
     }
     
     #totalsSection h3 {
-        font-size: 1.5rem;
+        font-size: 1.1rem;
+    }
+    
+    #totalsSection .mb-2 {
+        margin-bottom: 0.2rem !important;
+    }
+    
+    #totalsSection .mb-2 i {
+        font-size: 1.1rem !important;
     }
 }
 
 @media (max-width: 576px) {
-    #totalsSection h3 {
-        font-size: 1.25rem;
+    #totalsSection .col-4 {
+        flex: 0 0 30% !important;
+        max-width: 30% !important;
+        min-width: 30% !important;
+        padding-left: 0.2rem !important;
+        padding-right: 0.2rem !important;
+    }
+    
+    #totalsSection .card-body {
+        padding: 0.5rem !important;
     }
     
     #totalsSection .card-title {
+        font-size: 0.7rem;
+    }
+    
+    #totalsSection h3 {
+        font-size: 1rem;
+    }
+    
+    #totalsSection .mb-2 i {
+        font-size: 1rem !important;
+    }
+}
+
+@media (max-width: 480px) {
+    #totalsSection .col-4 {
+        flex: 0 0 33% !important;
+        max-width: 33% !important;
+        min-width: 33% !important;
+    }
+    
+    #totalsSection .card-title {
+        font-size: 0.65rem;
+    }
+    
+    #totalsSection h3 {
         font-size: 0.9rem;
+    }
+    
+    #totalsSection .mb-2 i {
+        font-size: 0.9rem !important;
     }
 }
 
