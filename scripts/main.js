@@ -49,6 +49,16 @@ async function initializeWalletManager() {
         // Create wallet manager instance
         walletManager = new HDWalletManager();
         
+        // Check current network switch state and set network before initialization
+        const networkSwitch = document.getElementById('networkSwitch');
+        const targetNetwork = networkSwitch && networkSwitch.checked ? 'testnet' : 'mainnet';
+        
+        // Switch to the selected network if it's not the default
+        if (targetNetwork !== DEFAULT_NETWORK) {
+            console.log(`Setting wallet manager to ${targetNetwork} before initialization`);
+            walletManager.switchNetwork(targetNetwork);
+        }
+        
         // Initialize
         const result = await walletManager.initialize(seedPhrase, rpcUrl || null);
         
@@ -56,11 +66,14 @@ async function initializeWalletManager() {
             // Create multi-transceiver instance
             multiTransceiver = new MultiTransceiver(walletManager);
             
-            uiController.updateFullscreenLoading('Wallet Manager Initialized!', 'Ready to generate wallets', 100);
+            // Update network display to reflect the correct network
+            updateNetworkDisplay();
+            
+            uiController.updateFullscreenLoading('Wallet Manager Initialized!', `Ready to generate wallets on ${result.network.name}`, 100);
             uiController.showStepControls();
             setTimeout(() => uiController.hideFullscreenLoading(), 1000);
             
-            uiController.showToast('Wallet manager initialized successfully!', 'success');
+            uiController.showToast(`Wallet manager initialized successfully on ${result.network.name}!`, 'success');
         } else {
             throw new Error(result.error);
         }
@@ -590,6 +603,10 @@ async function toggleNetwork() {
         } else {
             // Just update display if no wallet manager yet
             updateNetworkDisplay();
+            
+            // Update RPC URL field to match selected network
+            updateRpcUrlField(targetNetwork);
+            
             uiController.showToast(`Switched to ${targetNetwork === 'testnet' ? 'Testnet' : 'Mainnet'}`, 'info');
         }
         
@@ -605,6 +622,23 @@ async function toggleNetwork() {
             uiController.showToast('Failed to switch network: ' + error.message, 'error');
         } else {
             alert('Failed to switch network: ' + error.message);
+        }
+    }
+}
+
+/**
+ * Update RPC URL field based on selected network
+ */
+function updateRpcUrlField(targetNetwork) {
+    const rpcUrlInput = document.getElementById('rpcUrl');
+    if (rpcUrlInput && NETWORKS[targetNetwork]) {
+        rpcUrlInput.placeholder = NETWORKS[targetNetwork].rpcUrl;
+        // Only update the value if it's empty or contains a default network URL
+        const currentValue = rpcUrlInput.value.trim();
+        if (!currentValue || 
+            currentValue === NETWORKS.mainnet.rpcUrl || 
+            currentValue === NETWORKS.testnet.rpcUrl) {
+            rpcUrlInput.value = '';
         }
     }
 }

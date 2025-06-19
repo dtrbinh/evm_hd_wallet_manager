@@ -449,6 +449,11 @@
             
             // Initialize network display
             updateNetworkDisplay();
+            
+            // Update RPC URL field placeholder
+            const networkSwitch = document.getElementById('networkSwitch');
+            const initialNetwork = networkSwitch && networkSwitch.checked ? 'testnet' : 'mainnet';
+            updateRpcUrlField(initialNetwork);
         });
     </script>
 </body>
