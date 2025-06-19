@@ -373,8 +373,31 @@ class HDWalletManager {
                 throw new Error('Sender wallet not found');
             }
 
+            console.log(`Executing ${token} transaction from wallet ${fromWalletIndex} (${fromWallet.address}) to ${toAddress}, amount: ${amount}`);
+
             let txHash = null;
             let gasFee = 0;
+
+            // Validate amount
+            if (amount <= 0) {
+                throw new Error('Amount must be greater than 0');
+            }
+
+            // Check sufficient balance before transaction
+            if (token === 'POL') {
+                const balance = await this.web3.eth.getBalance(fromWallet.address);
+                const balanceEth = parseFloat(this.web3.utils.fromWei(balance, 'ether'));
+                if (balanceEth < amount) {
+                    throw new Error(`Insufficient POL balance. Required: ${amount}, Available: ${balanceEth.toFixed(6)}`);
+                }
+            } else if (token === 'USDT') {
+                const contract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);
+                const balance = await contract.methods.balanceOf(fromWallet.address).call();
+                const balanceFormatted = parseFloat(balance) / Math.pow(10, 6);
+                if (balanceFormatted < amount) {
+                    throw new Error(`Insufficient USDT balance. Required: ${amount}, Available: ${balanceFormatted.toFixed(6)}`);
+                }
+            }
 
             if (token === 'POL') {
                 // Native POL transfer
@@ -382,14 +405,35 @@ class HDWalletManager {
                 const adjustedGasPrice = Math.floor(parseFloat(gasPrice) * this.gasPriceMultiplier);
                 const gasLimit = 21000;
 
+                // Get nonce with retry mechanism
+                let nonce;
+                let retryCount = 0;
+                const maxRetries = 3;
+                
+                while (retryCount < maxRetries) {
+                    try {
+                        nonce = await this.web3.eth.getTransactionCount(fromWallet.address, 'pending');
+                        break;
+                    } catch (nonceError) {
+                        retryCount++;
+                        console.warn(`Nonce fetch attempt ${retryCount} failed:`, nonceError.message);
+                        if (retryCount >= maxRetries) {
+                            throw new Error(`Failed to get nonce after ${maxRetries} attempts: ${nonceError.message}`);
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+                    }
+                }
+
                 const tx = {
                     from: fromWallet.address,
                     to: toAddress,
                     value: this.web3.utils.toWei(amount.toString(), 'ether'),
                     gas: gasLimit,
                     gasPrice: adjustedGasPrice,
-                    nonce: await this.web3.eth.getTransactionCount(fromWallet.address)
+                    nonce: nonce
                 };
+
+                console.log(`POL transaction details:`, { from: tx.from, to: tx.to, value: tx.value, nonce: tx.nonce, gasPrice: tx.gasPrice });
 
                 const signedTx = await this.web3.eth.accounts.signTransaction(tx, fromWallet.privateKey);
                 const receipt = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
@@ -409,14 +453,35 @@ class HDWalletManager {
                 const adjustedGasPrice = Math.floor(parseFloat(gasPrice) * this.gasPriceMultiplier);
                 const gasLimit = 65000;
 
+                // Get nonce with retry mechanism
+                let nonce;
+                let retryCount = 0;
+                const maxRetries = 3;
+                
+                while (retryCount < maxRetries) {
+                    try {
+                        nonce = await this.web3.eth.getTransactionCount(fromWallet.address, 'pending');
+                        break;
+                    } catch (nonceError) {
+                        retryCount++;
+                        console.warn(`Nonce fetch attempt ${retryCount} failed:`, nonceError.message);
+                        if (retryCount >= maxRetries) {
+                            throw new Error(`Failed to get nonce after ${maxRetries} attempts: ${nonceError.message}`);
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second before retry
+                    }
+                }
+
                 const tx = {
                     from: fromWallet.address,
                     to: this.usdtAddress,
                     data: contract.methods.transfer(toAddress, amountWei.toString()).encodeABI(),
                     gas: gasLimit,
                     gasPrice: adjustedGasPrice,
-                    nonce: await this.web3.eth.getTransactionCount(fromWallet.address)
+                    nonce: nonce
                 };
+
+                console.log(`USDT transaction details:`, { from: tx.from, to: tx.to, amount: amountWei, nonce: tx.nonce, gasPrice: tx.gasPrice });
 
                 const signedTx = await this.web3.eth.accounts.signTransaction(tx, fromWallet.privateKey);
                 const receipt = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
@@ -429,7 +494,7 @@ class HDWalletManager {
             }
 
         } catch (error) {
-            console.error('Transaction failed:', error);
+            console.error(`Transaction failed for wallet ${fromWalletIndex}:`, error);
             return { success: false, txHash: null, gasFee: 0, error: error.message };
         }
     }

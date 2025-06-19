@@ -21,12 +21,85 @@ class MultiTransceiver {
     }
 
     /**
+     * Check if wallets have sufficient balance for multi-receive
+     */
+    async checkMultiReceiveBalances(selectedWallets, amount, token) {
+        const insufficientWallets = [];
+        
+        for (const walletIndex of selectedWallets) {
+            const wallet = this.walletManager.getWallet(walletIndex);
+            if (!wallet) {
+                insufficientWallets.push({
+                    index: walletIndex,
+                    error: 'Wallet not found'
+                });
+                continue;
+            }
+            
+            try {
+                if (token === 'POL') {
+                    const balance = await this.walletManager.web3.eth.getBalance(wallet.address);
+                    const balanceEth = parseFloat(this.walletManager.web3.utils.fromWei(balance, 'ether'));
+                    if (balanceEth < amount) {
+                        insufficientWallets.push({
+                            index: walletIndex,
+                            address: wallet.address,
+                            required: amount,
+                            available: balanceEth.toFixed(6),
+                            error: `Insufficient POL balance`
+                        });
+                    }
+                } else if (token === 'USDT') {
+                    const contract = new this.walletManager.web3.eth.Contract(
+                        this.walletManager.erc20Abi, 
+                        this.walletManager.usdtAddress
+                    );
+                    const balance = await contract.methods.balanceOf(wallet.address).call();
+                    const balanceFormatted = parseFloat(balance) / Math.pow(10, 6);
+                    if (balanceFormatted < amount) {
+                        insufficientWallets.push({
+                            index: walletIndex,
+                            address: wallet.address,
+                            required: amount,
+                            available: balanceFormatted.toFixed(6),
+                            error: `Insufficient USDT balance`
+                        });
+                    }
+                }
+            } catch (error) {
+                insufficientWallets.push({
+                    index: walletIndex,
+                    address: wallet.address,
+                    error: `Balance check failed: ${error.message}`
+                });
+            }
+        }
+        
+        return insufficientWallets;
+    }
+
+    /**
      * Execute multi-transaction (multi-send or multi-receive)
      */
     async executeMultiTransaction(params) {
         const { mode, token, senderWallet, receiverWallet, selectedWallets, amount } = params;
         
         console.log(`Executing ${mode} transaction: ${token}, amount: ${amount}, wallets: ${selectedWallets.length}`);
+        
+        // Pre-check balances for multi-receive
+        if (mode === 'multi-receive') {
+            console.log('Checking sender wallet balances before starting multi-receive...');
+            const insufficientWallets = await this.checkMultiReceiveBalances(selectedWallets, amount, token);
+            
+            if (insufficientWallets.length > 0) {
+                console.error('Insufficient balance detected in sender wallets:', insufficientWallets);
+                const errorDetails = insufficientWallets.map(w => 
+                    `Wallet ${w.index}: ${w.error}${w.available ? ` (Required: ${w.required}, Available: ${w.available})` : ''}`
+                ).join('; ');
+                throw new Error(`Cannot proceed with multi-receive. ${errorDetails}`);
+            }
+            console.log('✓ All sender wallets have sufficient balance');
+        }
         
         const transactions = [];
         let successfulTransactions = 0;
@@ -97,15 +170,21 @@ class MultiTransceiver {
                     throw new Error('Receiver wallet not found');
                 }
                 
-                for (const senderIndex of selectedWallets) {
+                console.log(`Starting multi-receive: ${selectedWallets.length} senders → Wallet ${receiver.index} (${receiver.address})`);
+                
+                for (let i = 0; i < selectedWallets.length; i++) {
+                    const senderIndex = selectedWallets[i];
                     const sender = this.walletManager.getWallet(senderIndex);
+                    
                     if (!sender) {
                         console.warn(`Sender wallet ${senderIndex} not found, skipping`);
                         continue;
                     }
                     
                     // Show progress
-                    this.updateProgress(`Receiving ${amount} ${token} from wallet ${sender.index}...`);
+                    this.updateProgress(`Receiving ${amount} ${token} from wallet ${sender.index} (${i + 1}/${selectedWallets.length})...`);
+                    
+                    console.log(`Multi-receive transaction ${i + 1}/${selectedWallets.length}: Wallet ${sender.index} → Wallet ${receiver.index}`);
                     
                     const txResult = await this.walletManager.executeTransaction(
                         sender.index, 
@@ -136,14 +215,19 @@ class MultiTransceiver {
                     
                     if (txResult.success) {
                         successfulTransactions++;
+                        console.log(`✓ Multi-receive transaction ${i + 1} successful: ${txResult.txHash}`);
                     } else {
                         failedTransactions++;
+                        console.error(`✗ Multi-receive transaction ${i + 1} failed: ${txResult.error}`);
                     }
                     
                     totalGasUsed += txResult.gasFee;
                     
-                    // Small delay between transactions to avoid nonce issues
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    // Longer delay between transactions to avoid nonce issues
+                    if (i < selectedWallets.length - 1) { // Don't delay after the last transaction
+                        console.log(`Waiting 2 seconds before next transaction...`);
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                    }
                 }
             }
             
