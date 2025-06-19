@@ -336,6 +336,105 @@ app.get('/api/get-status', (req, res) => {
     }
 });
 
+// Estimate gas fees for multi-transaction
+app.post('/api/estimate-multi-gas', async (req, res) => {
+    try {
+        if (!walletManager || !walletManager.wallets || walletManager.wallets.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'No wallets available. Please generate wallets first.'
+            });
+        }
+        
+        const { mode, token, selected_wallets, amount } = req.body;
+        
+        if (!mode || !token || !selected_wallets || !amount) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required parameters'
+            });
+        }
+        
+        const selectedWalletIndices = selected_wallets.map(w => parseInt(w));
+        const transactionAmount = parseFloat(amount);
+        const transactionCount = selectedWalletIndices.length;
+        
+        // Estimate gas for each transaction
+        const gasEstimate = await walletManager.estimateMultiTransactionGas(
+            mode, 
+            token, 
+            transactionCount, 
+            transactionAmount
+        );
+        
+        res.json({
+            success: true,
+            transaction_count: transactionCount,
+            gas_per_transaction: gasEstimate.gasPerTransaction,
+            total_gas_fee: gasEstimate.totalGasFee,
+            total_amount: transactionAmount * transactionCount
+        });
+        
+    } catch (error) {
+        console.error('Error estimating multi-transaction gas:', error);
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
+// Execute multi-transaction
+app.post('/api/execute-multi-transaction', async (req, res) => {
+    try {
+        if (!walletManager || !walletManager.wallets || walletManager.wallets.length === 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'No wallets available. Please generate wallets first.'
+            });
+        }
+        
+        const { mode, token, sender_wallet, receiver_wallet, selected_wallets, amount } = req.body;
+        
+        if (!mode || !token || !selected_wallets || !amount) {
+            return res.status(400).json({
+                success: false,
+                error: 'Missing required parameters'
+            });
+        }
+        
+        emitProgress("Executing multi-transaction...", 10);
+        
+        const result = await walletManager.executeMultiTransaction({
+            mode,
+            token,
+            senderWallet: sender_wallet ? parseInt(sender_wallet) : null,
+            receiverWallet: receiver_wallet ? parseInt(receiver_wallet) : null,
+            selectedWallets: selected_wallets.map(w => parseInt(w)),
+            amount: parseFloat(amount)
+        });
+        
+        emitProgress("Multi-transaction completed!", 100);
+        
+        res.json({
+            success: true,
+            transactions: result.transactions,
+            total_gas_used: result.totalGasUsed,
+            successful_transactions: result.successfulTransactions,
+            failed_transactions: result.failedTransactions
+        });
+        
+    } catch (error) {
+        console.error('Error executing multi-transaction:', error);
+        emitProgress(`Error: ${error.message}`, null);
+        
+        res.status(500).json({
+            success: false,
+            error: error.message
+        });
+    }
+});
+
 // Socket.IO connection handling
 io.on('connection', (socket) => {
     connectedClients++;

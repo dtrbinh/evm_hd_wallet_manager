@@ -318,6 +318,241 @@ class HDWalletManager {
 
 
     
+    async estimateMultiTransactionGas(mode, token, transactionCount, amount) {
+        /**
+         * Estimate gas fees for multi-transaction
+         * @param {string} mode - 'multi-send' or 'multi-receive'
+         * @param {string} token - 'POL' or 'USDT'
+         * @param {number} transactionCount - Number of transactions
+         * @param {number} amount - Amount per transaction
+         * @returns {Object} Gas estimation details
+         */
+        try {
+            let gasPerTransaction = 21000; // Default gas for POL transfer
+            
+            if (token === 'USDT') {
+                // ERC20 token transfer requires more gas
+                gasPerTransaction = 65000;
+            }
+            
+            // Get current gas price
+            const gasPrice = await this.web3.eth.getGasPrice();
+            const adjustedGasPrice = Math.floor(parseFloat(gasPrice) * this.gasPriceMultiplier);
+            
+            const gasCostPerTransaction = (gasPerTransaction * adjustedGasPrice) / Math.pow(10, 18);
+            const totalGasFee = gasCostPerTransaction * transactionCount;
+            
+            logger.info(`Gas estimate: ${transactionCount} transactions, ${gasCostPerTransaction.toFixed(6)} POL each, total: ${totalGasFee.toFixed(6)} POL`);
+            
+            return {
+                gasPerTransaction: gasCostPerTransaction,
+                totalGasFee: totalGasFee,
+                gasPrice: adjustedGasPrice,
+                gasLimit: gasPerTransaction
+            };
+            
+        } catch (error) {
+            logger.error(`Error estimating multi-transaction gas: ${error.message}`);
+            throw error;
+        }
+    }
+    
+    async executeMultiTransaction(params) {
+        /**
+         * Execute multi-transaction (multi-send or multi-receive)
+         * @param {Object} params - Transaction parameters
+         * @returns {Object} Transaction results
+         */
+        const { mode, token, senderWallet, receiverWallet, selectedWallets, amount } = params;
+        
+        logger.info(`Executing ${mode} transaction: ${token}, amount: ${amount}, wallets: ${selectedWallets.length}`);
+        
+        const transactions = [];
+        let successfulTransactions = 0;
+        let failedTransactions = 0;
+        let totalGasUsed = 0;
+        
+        try {
+            if (mode === 'multi-send') {
+                // One sender to multiple receivers
+                const sender = this.wallets.find(w => w.index === senderWallet);
+                if (!sender) {
+                    throw new Error('Sender wallet not found');
+                }
+                
+                for (const receiverIndex of selectedWallets) {
+                    const receiver = this.wallets.find(w => w.index === receiverIndex);
+                    if (!receiver) {
+                        logger.warn(`Receiver wallet ${receiverIndex} not found, skipping`);
+                        continue;
+                    }
+                    
+                    const txResult = await this.executeSingleTransaction(
+                        sender, 
+                        receiver.address, 
+                        amount, 
+                        token
+                    );
+                    
+                    const transaction = {
+                        type: 'Multi-Send',
+                        from: `Wallet ${sender.index}`,
+                        to: `Wallet ${receiver.index}`,
+                        token: token,
+                        amount: amount,
+                        gas_fee: txResult.gasFee,
+                        status: txResult.success ? 'success' : 'failed',
+                        tx_hash: txResult.txHash,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    transactions.push(transaction);
+                    
+                    if (txResult.success) {
+                        successfulTransactions++;
+                    } else {
+                        failedTransactions++;
+                    }
+                    
+                    totalGasUsed += txResult.gasFee;
+                    
+                    // Small delay between transactions to avoid nonce issues
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+            } else if (mode === 'multi-receive') {
+                // Multiple senders to one receiver
+                const receiver = this.wallets.find(w => w.index === receiverWallet);
+                if (!receiver) {
+                    throw new Error('Receiver wallet not found');
+                }
+                
+                for (const senderIndex of selectedWallets) {
+                    const sender = this.wallets.find(w => w.index === senderIndex);
+                    if (!sender) {
+                        logger.warn(`Sender wallet ${senderIndex} not found, skipping`);
+                        continue;
+                    }
+                    
+                    const txResult = await this.executeSingleTransaction(
+                        sender, 
+                        receiver.address, 
+                        amount, 
+                        token
+                    );
+                    
+                    const transaction = {
+                        type: 'Multi-Receive',
+                        from: `Wallet ${sender.index}`,
+                        to: `Wallet ${receiver.index}`,
+                        token: token,
+                        amount: amount,
+                        gas_fee: txResult.gasFee,
+                        status: txResult.success ? 'success' : 'failed',
+                        tx_hash: txResult.txHash,
+                        timestamp: new Date().toISOString()
+                    };
+                    
+                    transactions.push(transaction);
+                    
+                    if (txResult.success) {
+                        successfulTransactions++;
+                    } else {
+                        failedTransactions++;
+                    }
+                    
+                    totalGasUsed += txResult.gasFee;
+                    
+                    // Small delay between transactions to avoid nonce issues
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+            }
+            
+            logger.info(`Multi-transaction completed: ${successfulTransactions} successful, ${failedTransactions} failed`);
+            
+            return {
+                transactions,
+                successfulTransactions,
+                failedTransactions,
+                totalGasUsed
+            };
+            
+        } catch (error) {
+            logger.error(`Error executing multi-transaction: ${error.message}`);
+            throw error;
+        }
+    }
+    
+    async executeSingleTransaction(fromWallet, toAddress, amount, token) {
+        /**
+         * Execute a single transaction
+         * @param {Object} fromWallet - Sender wallet object
+         * @param {string} toAddress - Recipient address
+         * @param {number} amount - Amount to send
+         * @param {string} token - Token type ('POL' or 'USDT')
+         * @returns {Object} Transaction result
+         */
+        try {
+            let txHash = null;
+            let gasFee = 0;
+            
+            if (token === 'POL') {
+                // Native POL transfer
+                const gasPrice = await this.web3.eth.getGasPrice();
+                const adjustedGasPrice = Math.floor(parseFloat(gasPrice) * this.gasPriceMultiplier);
+                const gasLimit = 21000;
+                
+                const tx = {
+                    from: fromWallet.address,
+                    to: toAddress,
+                    value: this.web3.utils.toWei(amount.toString(), 'ether'),
+                    gas: gasLimit,
+                    gasPrice: adjustedGasPrice,
+                    nonce: await this.web3.eth.getTransactionCount(fromWallet.address)
+                };
+                
+                const signedTx = await this.web3.eth.accounts.signTransaction(tx, fromWallet.privateKey);
+                const receipt = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+                
+                txHash = receipt.transactionHash;
+                gasFee = (gasLimit * adjustedGasPrice) / Math.pow(10, 18);
+                
+                logger.info(`POL transfer successful: ${txHash}`);
+                return { success: true, txHash, gasFee };
+                
+            } else if (token === 'USDT') {
+                // USDT token transfer
+                const contract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);
+                const amountWei = Math.floor(amount * Math.pow(10, 6)); // USDT has 6 decimals
+                
+                const gasPrice = await this.web3.eth.getGasPrice();
+                const adjustedGasPrice = Math.floor(parseFloat(gasPrice) * this.gasPriceMultiplier);
+                const gasLimit = 65000;
+                
+                const tx = {
+                    from: fromWallet.address,
+                    to: this.usdtAddress,
+                    data: contract.methods.transfer(toAddress, amountWei.toString()).encodeABI(),
+                    gas: gasLimit,
+                    gasPrice: adjustedGasPrice,
+                    nonce: await this.web3.eth.getTransactionCount(fromWallet.address)
+                };
+                
+                const signedTx = await this.web3.eth.accounts.signTransaction(tx, fromWallet.privateKey);
+                const receipt = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+                
+                txHash = receipt.transactionHash;
+                gasFee = (gasLimit * adjustedGasPrice) / Math.pow(10, 18);
+                
+                logger.info(`USDT transfer successful: ${txHash}`);
+                return { success: true, txHash, gasFee };
+            }
+            
+        } catch (error) {
+            logger.error(`Transaction failed: ${error.message}`);
+            return { success: false, txHash: null, gasFee: 0, error: error.message };
+        }
+    }
 
     
     async saveLogsToExcel(filename = null) {

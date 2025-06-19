@@ -258,8 +258,15 @@
                                 </button>
                             </div>
                             <div class="col-md-4">
+                                <button class="btn btn-warning w-100 mb-2" onclick="openMultiTransceiver()">
+                                    <i class="fas fa-exchange-alt"></i> 3. MultiTransceiver
+                                </button>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-12">
                                 <button class="btn btn-info w-100 mb-2" onclick="saveLogs()">
-                                    <i class="fas fa-download"></i> 3. Save Logs
+                                    <i class="fas fa-download"></i> 4. Save Logs
                                 </button>
                             </div>
                         </div>
@@ -336,7 +343,165 @@
 
 
                 
+                <!-- Transaction History -->
+                <div class="card" id="transactionHistoryCard" style="display: none;">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-history"></i> Transaction History</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="transactionHistoryTable">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>From</th>
+                                        <th>To</th>
+                                        <th>Token</th>
+                                        <th>Amount</th>
+                                        <th>Gas Fee</th>
+                                        <th>Status</th>
+                                        <th>Timestamp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transactionHistoryBody">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- MultiTransceiver Modal -->
+    <div class="modal fade" id="multiTransceiverModal" tabindex="-1" aria-labelledby="multiTransceiverModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="multiTransceiverModalLabel">
+                        <i class="fas fa-exchange-alt"></i> MultiTransceiver
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Mode Selection -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label class="form-label">Transaction Mode</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="transactionMode" id="multiSendMode" value="multi-send" checked>
+                                <label class="btn btn-outline-primary" for="multiSendMode">
+                                    <i class="fas fa-arrow-right"></i> Multi-Send (1 → Many)
+                                </label>
+                                <input type="radio" class="btn-check" name="transactionMode" id="multiReceiveMode" value="multi-receive">
+                                <label class="btn btn-outline-success" for="multiReceiveMode">
+                                    <i class="fas fa-arrow-left"></i> Multi-Receive (Many → 1)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Send Mode -->
+                    <div id="multiSendSection">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Sender Wallet</label>
+                                <select class="form-select" id="senderWallet">
+                                    <option value="">Select sender wallet...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Token</label>
+                                <select class="form-select" id="tokenToSend">
+                                    <option value="POL">Native POL</option>
+                                    <option value="USDT">USDT</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Amount per Receiver</label>
+                                <input type="number" class="form-control" id="amountPerReceiver" step="0.000001" min="0" placeholder="0.000000">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <label class="form-label">Receiver Wallets</label>
+                                <div id="receiverWallets" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Receiver checkboxes will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Multi-Receive Mode -->
+                    <div id="multiReceiveSection" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Receiver Wallet</label>
+                                <select class="form-select" id="receiverWallet">
+                                    <option value="">Select receiver wallet...</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Token</label>
+                                <select class="form-select" id="tokenToReceive">
+                                    <option value="POL">Native POL</option>
+                                    <option value="USDT">USDT</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Amount per Sender</label>
+                                <input type="number" class="form-control" id="amountPerSender" step="0.000001" min="0" placeholder="0.000000">
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <label class="form-label">Sender Wallets</label>
+                                <div id="senderWallets" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    <!-- Sender checkboxes will be populated here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transaction Summary -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Transaction Summary</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <strong>Selected Wallets:</strong>
+                                            <div id="selectedWalletsCount">0</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Total Amount:</strong>
+                                            <div id="totalAmount">0.000000</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Estimated Gas Fee:</strong>
+                                            <div id="estimatedGasFee">Calculating...</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Total Cost:</strong>
+                                            <div id="totalCost">0.000000</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="calculateGasBtn" onclick="calculateGasFees()">
+                        <i class="fas fa-calculator"></i> Calculate Gas
+                    </button>
+                    <button type="button" class="btn btn-success" id="executeTransactionBtn" onclick="executeMultiTransaction()" disabled>
+                        <i class="fas fa-paper-plane"></i> Execute Transaction
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -620,6 +785,324 @@
                 updateProgress(result);
             }
         }, 1000);
+        
+        // MultiTransceiver functionality
+        let transactionHistory = [];
+        
+        async function openMultiTransceiver() {
+            if (!isInitialized) {
+                alert('Please initialize the manager first');
+                return;
+            }
+            
+            // Check if wallets exist by calling the API
+            try {
+                const result = await apiCall('/api/get-wallets');
+                if (!result.success || !result.wallets || result.wallets.length === 0) {
+                    alert('Please generate wallets first');
+                    return;
+                }
+                
+                let walletsWithBalances = result.wallets;
+                
+                // Try to get wallets with balance data if available
+                try {
+                    const balanceResult = await apiCall('/api/check-balances');
+                    if (balanceResult.success && balanceResult.wallets) {
+                        walletsWithBalances = balanceResult.wallets;
+                    }
+                } catch (balanceError) {
+                    console.log('Balance data not available, using wallets without balances');
+                }
+                
+                // Populate wallet selections with the retrieved wallets
+                populateWalletDropdowns(walletsWithBalances);
+                populateWalletCheckboxes(walletsWithBalances);
+                
+                // Show the modal
+                const modal = new bootstrap.Modal(document.getElementById('multiTransceiverModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('Error opening MultiTransceiver:', error);
+                alert('Error loading wallets. Please try again.');
+            }
+        }
+        
+        // This function is no longer needed as wallet population is handled in openMultiTransceiver()
+        
+        function populateWalletDropdowns(wallets) {
+            const senderSelect = document.getElementById('senderWallet');
+            const receiverSelect = document.getElementById('receiverWallet');
+            
+            // Clear existing options
+            senderSelect.innerHTML = '<option value="">Select sender wallet...</option>';
+            receiverSelect.innerHTML = '<option value="">Select receiver wallet...</option>';
+            
+            wallets.forEach(wallet => {
+                // Format balances for display (check both field names for compatibility)
+                const polBalance = (wallet.native_pol_balance !== null && wallet.native_pol_balance !== undefined && wallet.native_pol_balance !== 'error') ? 
+                    parseFloat(wallet.native_pol_balance).toFixed(4) : 'N/A';
+                const usdtBalance = (wallet.usdt_balance !== null && wallet.usdt_balance !== undefined && wallet.usdt_balance !== 'error') ? 
+                    parseFloat(wallet.usdt_balance).toFixed(4) : 'N/A';
+                
+                const balanceInfo = `(POL: ${polBalance}, USDT: ${usdtBalance})`;
+                const option = `<option value="${wallet.index}">${wallet.index}. ${wallet.address} ${balanceInfo}</option>`;
+                senderSelect.innerHTML += option;
+                receiverSelect.innerHTML += option;
+            });
+        }
+        
+        function populateWalletCheckboxes(wallets) {
+            const receiverDiv = document.getElementById('receiverWallets');
+            const senderDiv = document.getElementById('senderWallets');
+            
+            let receiverHTML = '';
+            let senderHTML = '';
+            
+            wallets.forEach(wallet => {
+                // Format balances for display (check both field names for compatibility)
+                const polBalance = (wallet.native_pol_balance !== null && wallet.native_pol_balance !== undefined && wallet.native_pol_balance !== 'error') ? 
+                    parseFloat(wallet.native_pol_balance).toFixed(4) : 'N/A';
+                const usdtBalance = (wallet.usdt_balance !== null && wallet.usdt_balance !== undefined && wallet.usdt_balance !== 'error') ? 
+                    parseFloat(wallet.usdt_balance).toFixed(4) : 'N/A';
+                
+                const balanceInfo = `<small class="text-muted">(POL: ${polBalance}, USDT: ${usdtBalance})</small>`;
+                
+                const checkboxHTML = `
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="${wallet.index}" id="receiver_${wallet.index}" onchange="updateTransactionSummary()">
+                        <label class="form-check-label" for="receiver_${wallet.index}">
+                            ${wallet.index}. ${wallet.address}<br>
+                            ${balanceInfo}
+                        </label>
+                    </div>
+                `;
+                
+                const senderCheckboxHTML = `
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="${wallet.index}" id="sender_${wallet.index}" onchange="updateTransactionSummary()">
+                        <label class="form-check-label" for="sender_${wallet.index}">
+                            ${wallet.index}. ${wallet.address}<br>
+                            ${balanceInfo}
+                        </label>
+                    </div>
+                `;
+                
+                receiverHTML += checkboxHTML;
+                senderHTML += senderCheckboxHTML;
+            });
+            
+            receiverDiv.innerHTML = receiverHTML;
+            senderDiv.innerHTML = senderHTML;
+        }
+        
+        // Toggle between multi-send and multi-receive modes
+        document.addEventListener('change', function(e) {
+            if (e.target.name === 'transactionMode') {
+                const multiSendSection = document.getElementById('multiSendSection');
+                const multiReceiveSection = document.getElementById('multiReceiveSection');
+                
+                if (e.target.value === 'multi-send') {
+                    multiSendSection.style.display = 'block';
+                    multiReceiveSection.style.display = 'none';
+                } else {
+                    multiSendSection.style.display = 'none';
+                    multiReceiveSection.style.display = 'block';
+                }
+                
+                updateTransactionSummary();
+            }
+        });
+        
+        function updateTransactionSummary() {
+            const mode = document.querySelector('input[name="transactionMode"]:checked').value;
+            let selectedCount = 0;
+            let amount = 0;
+            let totalAmount = 0;
+            
+            if (mode === 'multi-send') {
+                const selectedReceivers = document.querySelectorAll('#receiverWallets input:checked');
+                selectedCount = selectedReceivers.length;
+                amount = parseFloat(document.getElementById('amountPerReceiver').value) || 0;
+            } else {
+                const selectedSenders = document.querySelectorAll('#senderWallets input:checked');
+                selectedCount = selectedSenders.length;
+                amount = parseFloat(document.getElementById('amountPerSender').value) || 0;
+            }
+            
+            totalAmount = selectedCount * amount;
+            
+            document.getElementById('selectedWalletsCount').textContent = selectedCount;
+            document.getElementById('totalAmount').textContent = totalAmount.toFixed(6);
+            
+            // Reset gas fee calculation
+            document.getElementById('estimatedGasFee').textContent = 'Click Calculate Gas';
+            document.getElementById('totalCost').textContent = totalAmount.toFixed(6);
+            document.getElementById('executeTransactionBtn').disabled = true;
+        }
+        
+        // Add event listeners for amount inputs
+        document.addEventListener('input', function(e) {
+            if (e.target.id === 'amountPerReceiver' || e.target.id === 'amountPerSender') {
+                updateTransactionSummary();
+            }
+        });
+        
+        async function calculateGasFees() {
+            const mode = document.querySelector('input[name="transactionMode"]:checked').value;
+            const token = mode === 'multi-send' ? 
+                document.getElementById('tokenToSend').value : 
+                document.getElementById('tokenToReceive').value;
+            
+            let selectedWallets = [];
+            let amount = 0;
+            
+            if (mode === 'multi-send') {
+                const selectedReceivers = document.querySelectorAll('#receiverWallets input:checked');
+                selectedWallets = Array.from(selectedReceivers).map(cb => cb.value);
+                amount = parseFloat(document.getElementById('amountPerReceiver').value) || 0;
+            } else {
+                const selectedSenders = document.querySelectorAll('#senderWallets input:checked');
+                selectedWallets = Array.from(selectedSenders).map(cb => cb.value);
+                amount = parseFloat(document.getElementById('amountPerSender').value) || 0;
+            }
+            
+            if (selectedWallets.length === 0 || amount <= 0) {
+                alert('Please select wallets and enter amount');
+                return;
+            }
+            
+            document.getElementById('estimatedGasFee').textContent = 'Calculating...';
+            
+            try {
+                const result = await apiCall('/api/estimate-multi-gas', {
+                    mode: mode,
+                    token: token,
+                    selected_wallets: selectedWallets,
+                    amount: amount
+                });
+                
+                if (result.success) {
+                    const gasFee = result.total_gas_fee;
+                    const totalAmount = parseFloat(document.getElementById('totalAmount').textContent);
+                    const totalCost = token === 'POL' ? totalAmount + gasFee : totalAmount;
+                    
+                    document.getElementById('estimatedGasFee').textContent = gasFee.toFixed(6) + ' POL';
+                    document.getElementById('totalCost').textContent = totalCost.toFixed(6);
+                    document.getElementById('executeTransactionBtn').disabled = false;
+                } else {
+                    document.getElementById('estimatedGasFee').textContent = 'Error calculating gas';
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                document.getElementById('estimatedGasFee').textContent = 'Error calculating gas';
+                console.error('Gas calculation error:', error);
+            }
+        }
+        
+        async function executeMultiTransaction() {
+            const mode = document.querySelector('input[name="transactionMode"]:checked').value;
+            const token = mode === 'multi-send' ? 
+                document.getElementById('tokenToSend').value : 
+                document.getElementById('tokenToReceive').value;
+            
+            let selectedWallets = [];
+            let amount = 0;
+            let senderWallet = null;
+            let receiverWallet = null;
+            
+            if (mode === 'multi-send') {
+                senderWallet = document.getElementById('senderWallet').value;
+                const selectedReceivers = document.querySelectorAll('#receiverWallets input:checked');
+                selectedWallets = Array.from(selectedReceivers).map(cb => cb.value);
+                amount = parseFloat(document.getElementById('amountPerReceiver').value) || 0;
+            } else {
+                receiverWallet = document.getElementById('receiverWallet').value;
+                const selectedSenders = document.querySelectorAll('#senderWallets input:checked');
+                selectedWallets = Array.from(selectedSenders).map(cb => cb.value);
+                amount = parseFloat(document.getElementById('amountPerSender').value) || 0;
+            }
+            
+            if (!senderWallet && !receiverWallet) {
+                alert('Please select a sender or receiver wallet');
+                return;
+            }
+            
+            if (selectedWallets.length === 0 || amount <= 0) {
+                alert('Please select wallets and enter amount');
+                return;
+            }
+            
+            if (!confirm(`Execute ${mode} transaction for ${selectedWallets.length} wallets?`)) {
+                return;
+            }
+            
+            document.getElementById('executeTransactionBtn').disabled = true;
+            document.getElementById('executeTransactionBtn').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            try {
+                const result = await apiCall('/api/execute-multi-transaction', {
+                    mode: mode,
+                    token: token,
+                    sender_wallet: senderWallet,
+                    receiver_wallet: receiverWallet,
+                    selected_wallets: selectedWallets,
+                    amount: amount
+                });
+                
+                if (result.success) {
+                    alert('Multi-transaction executed successfully!');
+                    
+                    // Add to transaction history
+                    if (result.transactions) {
+                        transactionHistory.push(...result.transactions);
+                        updateTransactionHistoryTable();
+                    }
+                    
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('multiTransceiverModal'));
+                    modal.hide();
+                    
+                    // Refresh balances
+                    loadTotals();
+                } else {
+                    alert('Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Transaction execution error:', error);
+                alert('Error executing transaction');
+            } finally {
+                document.getElementById('executeTransactionBtn').disabled = false;
+                document.getElementById('executeTransactionBtn').innerHTML = '<i class="fas fa-paper-plane"></i> Execute Transaction';
+            }
+        }
+        
+        function updateTransactionHistoryTable() {
+            const tbody = document.getElementById('transactionHistoryBody');
+            tbody.innerHTML = '';
+            
+            transactionHistory.forEach(tx => {
+                const statusClass = tx.status === 'success' ? 'text-success' : 
+                                  tx.status === 'failed' ? 'text-danger' : 'text-warning';
+                
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${tx.type}</td>
+                    <td>${tx.from}</td>
+                    <td>${tx.to}</td>
+                    <td>${tx.token}</td>
+                    <td>${tx.amount.toFixed(6)}</td>
+                    <td>${tx.gas_fee.toFixed(6)} POL</td>
+                    <td><span class="${statusClass}">${tx.status}</span></td>
+                    <td>${new Date(tx.timestamp).toLocaleString()}</td>
+                `;
+            });
+            
+            if (transactionHistory.length > 0) {
+                document.getElementById('transactionHistoryCard').style.display = 'block';
+            }
+        }
         
         // Initialize wallet count on page load
         document.addEventListener('DOMContentLoaded', function() {

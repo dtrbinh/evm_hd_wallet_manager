@@ -4,9 +4,13 @@ A Node.js application that manages HD wallets derived from a seed phrase, checks
 
 ## Features
 
-- **HD Wallet Generation**: Creates 10 HD wallets from a single seed phrase
-- **Balance Checking**: Monitors USDT and POL balances across all wallets
-- **Smart Transfer Logic**: Automatically transfers USDT from wallets 2-10 to wallet 1
+- **HD Wallet Generation**: Creates HD wallets from a single seed phrase with custom derivation paths
+- **Balance Checking**: Monitors USDT and Native POL balances across all wallets
+- **MultiTransceiver System**: Advanced multi-wallet transaction capabilities
+  - **Multi-Send**: Send tokens from 1 wallet to multiple wallets
+  - **Multi-Receive**: Collect tokens from multiple wallets to 1 wallet
+  - **Gas Estimation**: Calculate gas fees before execution
+  - **Transaction History**: Track all multi-transactions with detailed status
 - **Gas Management**: Handles gas costs with intelligent transaction fee calculation
 - **Comprehensive Logging**: Generates detailed Excel reports with multiple sheets
 - **Error Handling**: Robust error handling and transaction verification
@@ -138,10 +142,45 @@ The progress section appears automatically when operations are running:
 
 After initialization, you can use individual controls:
 
-1. **1. Get HD Wallets**: Create 10 HD wallets from your seed phrase
-2. **2. Check Balances**: Query USDT and POL balances
-3. **3. Consolidate USDT**: Transfer USDT from wallets 2-10 to wallet 1
+1. **1. Generate HD Wallets**: Create HD wallets from your seed phrase with custom derivation paths
+2. **2. Check Balances**: Query USDT and Native POL balances
+3. **3. MultiTransceiver**: Advanced multi-wallet transaction system
 4. **4. Save Logs**: Generate Excel report with all data
+
+### MultiTransceiver Feature
+
+The MultiTransceiver provides advanced multi-wallet transaction capabilities:
+
+#### Multi-Send Mode (1 → Many)
+- Select **one sender wallet** from dropdown
+- Choose **multiple receiver wallets** using checkboxes
+- Select **token type** (Native POL or USDT)
+- Enter **amount per receiver**
+- **Total amount** = amount × number of receivers
+
+#### Multi-Receive Mode (Many → 1)
+- Select **one receiver wallet** from dropdown
+- Choose **multiple sender wallets** using checkboxes
+- Select **token type** (Native POL or USDT)
+- Enter **amount per sender**
+- **Total amount** = amount × number of senders
+
+#### Transaction Process
+1. **Configure Transaction**: Select mode, wallets, token, and amount
+2. **Calculate Gas Fees**: Click "Calculate Gas" to estimate transaction costs
+3. **Review Summary**: Check selected wallets, total amount, gas fees, and total cost
+4. **Execute Transaction**: Click "Execute Transaction" to process all transfers
+5. **View History**: All transactions are automatically logged in the Transaction History table
+
+#### Transaction History
+The system maintains a complete history of all multi-transactions:
+- **Type**: Multi-Send or Multi-Receive
+- **From/To**: Source and destination wallets
+- **Token**: POL or USDT
+- **Amount**: Transfer amount per transaction
+- **Gas Fee**: Actual gas cost in POL
+- **Status**: Success/Failed with color indicators
+- **Timestamp**: When transaction was executed
 
 ### Data Tables
 
@@ -155,15 +194,17 @@ After initialization, you can use individual controls:
 | POL | POL balance (null if error) |
 | Updated | Timestamp of last balance check |
 
-#### Transfers Table
+#### Transaction History Table
 | Column | Description |
 |--------|-------------|
-| From Wallet | Source wallet number |
-| To Wallet | Destination wallet number |
-| USDT Amount | Amount transferred |
-| Gas Estimate | Estimated gas cost in MATIC |
-| Status | Transfer status with color indicator |
-| Timestamp | When transfer was attempted |
+| Type | Multi-Send or Multi-Receive |
+| From | Source wallet identifier |
+| To | Destination wallet identifier |
+| Token | POL or USDT |
+| Amount | Transfer amount |
+| Gas Fee | Actual gas cost in POL |
+| Status | Success/Failed with color indicator |
+| Timestamp | When transaction was executed |
 
 ### Totals Summary
 
