@@ -22,6 +22,10 @@
     -webkit-text-fill-color: white !important;
 }
 
+.header-section .lead {
+    color: white !important;
+}
+
 /* Card styling */
 .card {
     border: none;
@@ -651,6 +655,13 @@
     justify-content: center;
 }
 
+.network-switch-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
 .network-switch {
     position: relative;
     display: inline-block;
@@ -664,79 +675,246 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 140px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 25px;
+    width: 200px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 35px;
     position: relative;
     cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(10px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(15px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
 .network-label:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
 }
 
-.network-text-mainnet,
-.network-text-testnet {
-    font-size: 12px;
-    font-weight: 600;
-    color: white;
+.network-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 90px;
+    height: 100%;
     z-index: 2;
     position: relative;
-    padding: 0 15px;
+    transition: all 0.3s ease;
+    gap: 4px;
+}
+
+.network-option i {
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.8);
+    transition: all 0.3s ease;
+}
+
+.network-option span {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.8);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
     transition: all 0.3s ease;
 }
 
 .network-slider {
     position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 65px;
-    height: 34px;
+    top: 4px;
+    left: 4px;
+    width: 92px;
+    height: 50px;
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    border-radius: 20px;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 30px;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(40, 167, 69, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+
+
+/* Active states */
 .network-toggle:checked + .network-label .network-slider {
-    transform: translateX(71px);
+    transform: translateX(104px);
     background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    box-shadow: 0 4px 20px rgba(255, 193, 7, 0.4);
 }
 
-.network-toggle:checked + .network-label .network-text-mainnet {
-    opacity: 0.6;
+
+
+.network-toggle:checked + .network-label .mainnet-option {
+    opacity: 0.5;
+    transform: scale(0.95);
 }
 
-.network-toggle:not(:checked) + .network-label .network-text-testnet {
-    opacity: 0.6;
+.network-toggle:not(:checked) + .network-label .testnet-option {
+    opacity: 0.5;
+    transform: scale(0.95);
 }
 
+.network-toggle:checked + .network-label .testnet-option i,
+.network-toggle:checked + .network-label .testnet-option span {
+    color: rgba(255, 255, 255, 1);
+}
+
+.network-toggle:not(:checked) + .network-label .mainnet-option i,
+.network-toggle:not(:checked) + .network-label .mainnet-option span {
+    color: rgba(255, 255, 255, 1);
+}
+
+/* Network Info Card */
 .network-info {
     text-align: center;
+    width: 100%;
+    max-width: 300px;
+}
+
+.current-network-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 20px;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.current-network-card:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.network-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
 .network-info .badge {
-    font-size: 11px;
-    padding: 6px 12px;
-    border-radius: 15px;
-    margin-bottom: 4px;
+    font-size: 13px;
+    padding: 10px 18px;
+    border-radius: 25px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: none;
+    text-transform: uppercase;
 }
 
-.network-info .text-muted {
-    font-size: 10px;
-    opacity: 0.8;
+.network-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: center;
+    color: white;
+}
+
+.network-details * {
+    color: white !important;
+}
+
+.network-detail-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 4px 0;
+}
+
+.network-detail-item i {
+    font-size: 12px;
+    color: white;
+    opacity: 0.9;
+}
+
+.network-detail-item span {
+    font-size: 12px;
+    font-weight: 500;
+    color: white;
 }
 
 /* Network status colors */
 .bg-mainnet {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+    color: white !important;
 }
 
 .bg-testnet {
     background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%) !important;
+    color: white !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .network-label {
+        width: 180px;
+        height: 55px;
+    }
+    
+    .network-option {
+        width: 80px;
+    }
+    
+    .network-slider {
+        width: 82px;
+        height: 45px;
+    }
+    
+    .network-toggle:checked + .network-label .network-slider {
+        transform: translateX(94px);
+    }
+    
+    .current-network-card {
+        padding: 16px;
+        max-width: 280px;
+    }
+}
+
+@media (max-width: 480px) {
+    .network-label {
+        width: 160px;
+        height: 50px;
+    }
+    
+    .network-option {
+        width: 70px;
+    }
+    
+    .network-option i {
+        font-size: 14px;
+    }
+    
+    .network-option span {
+        font-size: 10px;
+    }
+    
+    .network-slider {
+        width: 72px;
+        height: 40px;
+    }
+    
+
+    
+    .network-toggle:checked + .network-label .network-slider {
+        transform: translateX(84px);
+    }
+    
+    .current-network-card {
+        padding: 14px;
+        max-width: 260px;
+    }
+    
+    .network-info .badge {
+        font-size: 11px;
+        padding: 8px 14px;
+    }
 }

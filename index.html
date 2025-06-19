@@ -34,18 +34,42 @@
                     <p class="lead text-muted">Polygon Network Multi-Wallet Manager</p>
                     
                     <!-- Network Switch -->
-                    <div class="network-switch-container mt-3">
-                        <div class="network-switch">
-                            <input type="checkbox" id="networkSwitch" class="network-toggle" onchange="toggleNetwork()">
-                            <label for="networkSwitch" class="network-label">
-                                <span class="network-text-mainnet">Mainnet</span>
-                                <span class="network-text-testnet">Testnet</span>
-                                <div class="network-slider"></div>
-                            </label>
-                        </div>
-                        <div class="network-info mt-2">
-                            <span id="currentNetwork" class="badge bg-success">Polygon Mainnet</span>
-                            <span id="currentRPC" class="text-muted small d-block">https://polygon-rpc.com</span>
+                    <div class="network-switch-container mt-4">
+                        <div class="network-switch-wrapper">
+                            <div class="network-switch">
+                                <input type="checkbox" id="networkSwitch" class="network-toggle" onchange="toggleNetwork()">
+                                <label for="networkSwitch" class="network-label">
+                                    <div class="network-option mainnet-option">
+                                        <i class="fas fa-globe"></i>
+                                        <span>Mainnet</span>
+                                    </div>
+                                    <div class="network-option testnet-option">
+                                        <i class="fas fa-flask"></i>
+                                        <span>Testnet</span>
+                                    </div>
+                                    <div class="network-slider">
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="network-info mt-3">
+                                <div class="current-network-card">
+                                    <div class="network-status">
+                                        <span id="currentNetwork" class="badge bg-mainnet">
+                                            <i class="fas fa-globe me-1"></i>Polygon Mainnet
+                                        </span>
+                                        <div class="network-details mt-2">
+                                            <div class="network-detail-item">
+                                                <i class="fas fa-link text-muted me-1"></i>
+                                                <span id="currentRPC" class="text-muted small">https://polygon-rpc.com</span>
+                                            </div>
+                                            <div class="network-detail-item">
+                                                <i class="fas fa-hashtag text-muted me-1"></i>
+                                                <span id="currentChainId" class="text-muted small">Chain ID: 137</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

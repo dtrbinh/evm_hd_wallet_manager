@@ -582,8 +582,9 @@ function updateNetworkDisplay() {
     const networkSwitch = document.getElementById('networkSwitch');
     const currentNetworkEl = document.getElementById('currentNetwork');
     const currentRPCEl = document.getElementById('currentRPC');
+    const currentChainIdEl = document.getElementById('currentChainId');
     
-    if (!networkSwitch || !currentNetworkEl || !currentRPCEl) {
+    if (!networkSwitch || !currentNetworkEl || !currentRPCEl || !currentChainIdEl) {
         return;
     }
     
@@ -591,19 +592,23 @@ function updateNetworkDisplay() {
     
     if (walletManager) {
         const network = walletManager.getCurrentNetwork();
-        currentNetworkEl.textContent = network.name;
+        const icon = isTestnet ? 'fas fa-flask' : 'fas fa-globe';
+        currentNetworkEl.innerHTML = `<i class="${icon} me-1"></i>${network.name}`;
         currentNetworkEl.className = `badge ${isTestnet ? 'bg-testnet' : 'bg-mainnet'}`;
         currentRPCEl.textContent = network.rpcUrl;
+        currentChainIdEl.textContent = `Chain ID: ${network.chainId}`;
     } else {
         // Default display when no wallet manager
         if (isTestnet) {
-            currentNetworkEl.textContent = 'Polygon Amoy Testnet';
+            currentNetworkEl.innerHTML = '<i class="fas fa-flask me-1"></i>Polygon Amoy Testnet';
             currentNetworkEl.className = 'badge bg-testnet';
             currentRPCEl.textContent = 'https://rpc-amoy.polygon.technology';
+            currentChainIdEl.textContent = 'Chain ID: 80002';
         } else {
-            currentNetworkEl.textContent = 'Polygon Mainnet';
+            currentNetworkEl.innerHTML = '<i class="fas fa-globe me-1"></i>Polygon Mainnet';
             currentNetworkEl.className = 'badge bg-mainnet';
             currentRPCEl.textContent = 'https://polygon-rpc.com';
+            currentChainIdEl.textContent = 'Chain ID: 137';
         }
     }
 }
