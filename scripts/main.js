@@ -518,11 +518,14 @@ async function toggleNetwork() {
         
         // If wallet manager exists, switch its network
         if (walletManager) {
+            // Store wallet generation parameters before switching
+            const hadWallets = walletManager.wallets && walletManager.wallets.length > 0;
+            const walletCount = hadWallets ? walletManager.wallets.length : 0;
+            const startIndex = 0; // Default start index
+            const endIndex = walletCount > 0 ? walletCount - 1 : 9; // Default end index
+            
             const result = walletManager.switchNetwork(targetNetwork);
             if (result.success) {
-                // Clear existing wallets since network changed
-                walletManager.wallets = [];
-                
                 // Re-initialize wallet manager with new network if seed phrase is available
                 const seedPhrase = document.getElementById('seedPhrase').value.trim();
                 if (seedPhrase) {
@@ -531,8 +534,30 @@ async function toggleNetwork() {
                     // Re-initialize with new network
                     const initResult = await walletManager.initialize(seedPhrase);
                     if (initResult.success) {
+                        // Ensure Web3 connection is properly refreshed for the new network
+                        await walletManager.refreshConnection();
+                        
                         // Re-create multi-transceiver instance
                         multiTransceiver = new MultiTransceiver(walletManager);
+                        
+                        // If there were wallets before, regenerate them for the new network
+                        if (hadWallets) {
+                            uiController.updateFullscreenLoading('Regenerating Wallets', `Creating ${walletCount} wallets for ${result.network.name}...`, 60);
+                            
+                            // Regenerate wallets with the same parameters
+                            const wallets = walletManager.generateWallets(walletCount, startIndex, endIndex);
+                            uiController.updateWalletsTable(wallets);
+                            uiController.showStepControls();
+                            
+                            // Show totals section with cleared balances
+                            document.getElementById('totalsSection').style.display = 'block';
+                            uiController.updateTotals({
+                                wallet_count: walletCount,
+                                total_native_pol: 0,
+                                total_usdt: 0,
+                                timestamp: new Date().toISOString()
+                            });
+                        }
                         
                         uiController.updateFullscreenLoading('Network Switch Complete!', `Connected to ${result.network.name}`, 100);
                         uiController.showStepControls();

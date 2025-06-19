@@ -203,6 +203,10 @@ class HDWalletManager {
                     onProgress(walletIndex, 'checking', null);
                 }
 
+                // Debug logging for network verification
+                console.log(`Checking balance for wallet ${walletIndex} on ${this.networks[this.currentNetwork].name}`);
+                console.log(`Using RPC: ${this.rpcUrl}, USDT Address: ${this.usdtAddress}`);
+
                 // Check Native POL balance
                 const polBalance = await this.web3.eth.getBalance(wallet.address);
                 const polBalanceEth = this.web3.utils.fromWei(polBalance, 'ether');
