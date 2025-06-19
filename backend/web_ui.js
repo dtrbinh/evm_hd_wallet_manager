@@ -89,7 +89,7 @@ app.post('/api/initialize', async (req, res) => {
     }
 });
 
-// Generate HD wallets
+// Generate HD wallets with custom derivation path range
 app.post('/api/generate-wallets', async (req, res) => {
     try {
         if (!walletManager) {
@@ -99,11 +99,30 @@ app.post('/api/generate-wallets', async (req, res) => {
             });
         }
         
-        const { count = 10 } = req.body;
+        const { start_index = 0, end_index = 9, count = 10 } = req.body;
+        
+        // Validate inputs
+        const startIdx = parseInt(start_index);
+        const endIdx = parseInt(end_index);
+        const walletCount = parseInt(count);
+        
+        if (endIdx < startIdx) {
+            return res.status(400).json({
+                success: false,
+                error: 'End index must be greater than or equal to start index'
+            });
+        }
+        
+        if (walletCount > 100) {
+            return res.status(400).json({
+                success: false,
+                error: 'Maximum 100 wallets allowed'
+            });
+        }
         
         emitProgress("Generating HD wallets...", 20);
         
-        const wallets = walletManager.generateWallets(parseInt(count));
+        const wallets = walletManager.generateWallets(walletCount, startIdx, endIdx);
         
         // Format wallets for frontend (without private keys for security)
         const safeWallets = wallets.map(wallet => ({

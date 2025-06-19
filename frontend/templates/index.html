@@ -186,6 +186,31 @@
                             </div>
                         </div>
                         <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Derivation Path Range</label>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label for="startIndex" class="form-label text-muted small">Start Index</label>
+                                            <input type="number" class="form-control" id="startIndex" value="0" min="0" max="999" onchange="updateWalletCount()">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="endIndex" class="form-label text-muted small">End Index</label>
+                                            <input type="number" class="form-control" id="endIndex" value="9" min="0" max="999" onchange="updateWalletCount()">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">Will generate wallets from m/44'/60'/0'/0/{start} to m/44'/60'/0'/0/{end}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Wallet Count</label>
+                                    <input type="text" class="form-control" id="walletCount" value="10" readonly>
+                                    <small class="text-muted">Automatically calculated from range (max 100 wallets)</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
                             <div class="col-12">
                                 <button class="btn btn-success" onclick="initializeManager()">
                                     <i class="fas fa-check"></i> Initialize Manager
@@ -328,6 +353,28 @@
         // Global variables
         let isInitialized = false;
         
+        // Update wallet count based on derivation path range
+        function updateWalletCount() {
+            const startIndex = parseInt(document.getElementById('startIndex').value) || 0;
+            const endIndex = parseInt(document.getElementById('endIndex').value) || 0;
+            
+            if (endIndex < startIndex) {
+                document.getElementById('endIndex').value = startIndex;
+                return updateWalletCount();
+            }
+            
+            const count = endIndex - startIndex + 1;
+            const maxWallets = 100;
+            
+            if (count > maxWallets) {
+                alert(`Maximum ${maxWallets} wallets allowed. Adjusting end index.`);
+                document.getElementById('endIndex').value = startIndex + maxWallets - 1;
+                return updateWalletCount();
+            }
+            
+            document.getElementById('walletCount').value = count;
+        }
+        
         // Socket event handlers
         socket.on('status_update', function(data) {
             updateProgress(data);
@@ -410,14 +457,33 @@
             }
         }
         
-        // Generate HD wallets only
+        // Generate HD wallets with custom derivation path range
         async function generateWallets() {
             if (!isInitialized) {
                 alert('Please initialize the manager first');
                 return;
             }
             
-            const result = await apiCall('/api/generate-wallets', {});
+            const startIndex = parseInt(document.getElementById('startIndex').value) || 0;
+            const endIndex = parseInt(document.getElementById('endIndex').value) || 9;
+            
+            // Validate range
+            if (endIndex < startIndex) {
+                alert('End index must be greater than or equal to start index');
+                return;
+            }
+            
+            const count = endIndex - startIndex + 1;
+            if (count > 100) {
+                alert('Maximum 100 wallets allowed');
+                return;
+            }
+            
+            const result = await apiCall('/api/generate-wallets', {
+                start_index: startIndex,
+                end_index: endIndex,
+                count: count
+            });
             
             if (result.success) {
                 // Load wallets immediately (without balances)
@@ -554,6 +620,11 @@
                 updateProgress(result);
             }
         }, 1000);
+        
+        // Initialize wallet count on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateWalletCount();
+        });
     </script>
 </body>
 </html> 

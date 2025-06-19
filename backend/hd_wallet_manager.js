@@ -141,13 +141,15 @@ class HDWalletManager {
         }
     }
     
-    generateWallets(count = 10) {
+    generateWallets(count = 10, startIndex = 0, endIndex = 9) {
         /**
-         * Generate HD wallets from seed phrase
+         * Generate HD wallets from seed phrase with custom derivation path range
          * @param {number} count - Number of wallets to generate (default: 10)
+         * @param {number} startIndex - Starting derivation path index (default: 0)
+         * @param {number} endIndex - Ending derivation path index (default: 9)
          * @returns {Array} List of wallet objects with address and private key
          */
-        logger.info(`Generating ${count} HD wallets...`);
+        logger.info(`Generating ${count} HD wallets from index ${startIndex} to ${endIndex}...`);
         
         // Validate mnemonic
         if (!bip39.validateMnemonic(this.seedPhrase)) {
@@ -158,21 +160,25 @@ class HDWalletManager {
         const hdKey = HDKey.fromMasterSeed(seed);
         
         const wallets = [];
-        for (let i = 0; i < count; i++) {
+        let walletNumber = 1;
+        
+        for (let i = startIndex; i <= endIndex; i++) {
             // Derive wallet for path m/44'/60'/0'/0/{i}
             const derivedKey = hdKey.derive(`m/44'/60'/0'/0/${i}`);
             const privateKey = derivedKey.privateKey;
             const address = this.web3.eth.accounts.privateKeyToAccount('0x' + privateKey.toString('hex')).address;
             
             const walletInfo = {
-                index: i + 1,
+                index: walletNumber, // Sequential wallet number (1, 2, 3, ...)
+                derivationIndex: i, // Actual derivation path index
                 address: address,
                 privateKey: '0x' + privateKey.toString('hex'),
                 path: `m/44'/60'/0'/0/${i}`
             };
             wallets.push(walletInfo);
             
-            logger.info(`Generated wallet ${i + 1}: ${walletInfo.address}`);
+            logger.info(`Generated wallet ${walletNumber} (derivation index ${i}): ${walletInfo.address}`);
+            walletNumber++;
         }
         
         this.wallets = wallets;
