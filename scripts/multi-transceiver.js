@@ -163,6 +163,15 @@ class MultiTransceiver {
                         console.error(`✗ Multi-send transaction ${i + 1} failed: ${txResult.error}`);
                     }
                     
+                    // Update progress after transaction completion
+                    const completedCount = i + 1;
+                    const status = txResult.success ? 'completed successfully' : 'failed';
+                    this.updateProgress(
+                        `Transaction ${completedCount}/${selectedWallets.length} ${status}`,
+                        `${successfulTransactions} successful, ${failedTransactions} failed`,
+                        completedCount
+                    );
+                    
                     totalGasUsed += txResult.gasFee;
                     
                     // Delay between transactions to avoid nonce issues
@@ -232,6 +241,15 @@ class MultiTransceiver {
                         failedTransactions++;
                         console.error(`✗ Multi-receive transaction ${i + 1} failed: ${txResult.error}`);
                     }
+                    
+                    // Update progress after transaction completion
+                    const completedCount = i + 1;
+                    const status = txResult.success ? 'completed successfully' : 'failed';
+                    this.updateProgress(
+                        `Transaction ${completedCount}/${selectedWallets.length} ${status}`,
+                        `${successfulTransactions} successful, ${failedTransactions} failed`,
+                        completedCount
+                    );
                     
                     totalGasUsed += txResult.gasFee;
                     

@@ -18,6 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     uiController = new UIController();
     uiController.initialize();
     
+    // Make UI controller available globally for multi-transceiver
+    window.uiController = uiController;
+    
     // Set up global progress update function (deprecated - using full-screen loading now)
     window.updateProgressMessage = function(message) {
         console.log('Progress:', message);

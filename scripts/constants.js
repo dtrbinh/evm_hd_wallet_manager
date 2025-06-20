@@ -14,7 +14,7 @@ const NETWORKS = {
     },
     testnet: {
         name: 'Polygon Amoy Testnet',
-        rpcUrl: 'https://rpc-amoy.polygon.technology',
+        rpcUrl: 'https://polygon-amoy-bor-rpc.publicnode.com',
         chainId: 80002,
         usdtAddress: '0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582', // Mock USDT on testnet
         explorerUrl: 'https://amoy.polygonscan.com'

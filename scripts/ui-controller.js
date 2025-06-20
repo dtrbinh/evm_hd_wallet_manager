@@ -697,11 +697,11 @@ class UIController {
         const progress = Math.round((this.transactionProgressState.currentTransaction / this.transactionProgressState.totalTransactions) * 100);
         
         // Update UI
-        current.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${message}`;
-        detailsEl.textContent = details;
-        progressText.textContent = `${progress}%`;
-        progressCount.textContent = `${this.transactionProgressState.currentTransaction} / ${this.transactionProgressState.totalTransactions}`;
-        progressBar.style.width = `${progress}%`;
+        if (current) current.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${message}`;
+        if (detailsEl) detailsEl.textContent = details;
+        if (progressText) progressText.textContent = `${progress}%`;
+        if (progressCount) progressCount.textContent = `${this.transactionProgressState.currentTransaction} / ${this.transactionProgressState.totalTransactions}`;
+        if (progressBar) progressBar.style.width = `${progress}%`;
         
         // Update minimized view
         const minimizedText = document.getElementById('transactionProgressMinimizedText');
@@ -730,9 +730,13 @@ class UIController {
         this.transactionProgressState.totalGas += gasFee;
         
         // Update stats
-        document.getElementById('transactionProgressSuccessful').textContent = this.transactionProgressState.successful;
-        document.getElementById('transactionProgressFailed').textContent = this.transactionProgressState.failed;
-        document.getElementById('transactionProgressGasFee').textContent = this.transactionProgressState.totalGas.toFixed(6);
+        const successfulEl = document.getElementById('transactionProgressSuccessful');
+        const failedEl = document.getElementById('transactionProgressFailed');
+        const gasFeeEl = document.getElementById('transactionProgressGasFee');
+        
+        if (successfulEl) successfulEl.textContent = this.transactionProgressState.successful;
+        if (failedEl) failedEl.textContent = this.transactionProgressState.failed;
+        if (gasFeeEl) gasFeeEl.textContent = this.transactionProgressState.totalGas.toFixed(6);
     }
 
     /**
