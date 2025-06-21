@@ -54,10 +54,10 @@ const ERC20_ABI = [
 
 // Application Settings
 const APP_SETTINGS = {
-    gasPriceMultiplier: 1.2, // 20% buffer for gas price
+    gasPriceMultiplier: 1.1, // 10% buffer for gas price
     derivationPathPrefix: "m/44'/60'/0'/0/", // Ethereum HD derivation path
     maxWalletCount: 1000,
-    defaultWalletCount: 10,
+    defaultWalletCount: 12,
     balanceCheckConcurrency: 3, // Number of concurrent balance checks
     transactionTimeout: 30000, // 30 seconds
     retryAttempts: 3
