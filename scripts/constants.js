@@ -57,7 +57,7 @@ const APP_SETTINGS = {
     gasPriceMultiplier: 1.1, // 10% buffer for gas price
     derivationPathPrefix: "m/44'/60'/0'/0/", // Ethereum HD derivation path
     maxWalletCount: 1000,
-    defaultWalletCount: 12,
+    defaultWalletCount: 10,
     balanceCheckConcurrency: 3, // Number of concurrent balance checks
     transactionTimeout: 30000, // 30 seconds
     retryAttempts: 3

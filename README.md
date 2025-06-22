@@ -28,6 +28,16 @@ A complete standalone frontend application for managing HD wallets on Ethereum-c
 6. **Check balances**: Get current POL and USDT balances with progressive updates
 7. **Use MultiTransceiver**: Execute multi-wallet transactions with real-time progress tracking
 
+## Example Seed Phrase
+
+For testing purposes, you can use this example seed phrase:
+
+```
+detail tumble lawsuit health feature trap security invest cart veteran lawn purse
+```
+
+⚠️ **Warning**: This is a publicly available seed phrase for testing only. Never use this for real funds or mainnet transactions. Always generate your own secure seed phrase for actual use.
+
 ## File Structure
 
 ```
