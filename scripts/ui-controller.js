@@ -287,25 +287,37 @@ class UIController {
             const usdtBalance = (wallet.usdt_balance !== null && wallet.usdt_balance !== undefined && wallet.usdt_balance !== 'error') ? 
                 parseFloat(wallet.usdt_balance).toFixed(4) : 'N/A';
             
-            const balanceInfo = `<small class="text-muted">(POL: ${polBalance}, USDT: ${usdtBalance})</small>`;
+            // Create styled balance badges
+            const balanceInfo = `
+                <div class="generated-wallet-balances">
+                    <span class="balance-item pol-balance">POL: ${polBalance}</span>
+                    <span class="balance-item usdt-balance">USDT: ${usdtBalance}</span>
+                </div>
+            `;
             
             const checkboxHTML = `
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="${wallet.index}" id="receiver_${wallet.index}" onchange="uiController.updateTransactionSummary()">
-                    <label class="form-check-label" for="receiver_${wallet.index}">
-                        ${wallet.index}. ${wallet.address}<br>
-                        ${balanceInfo}
-                    </label>
+                <div class="generated-wallet-item">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="${wallet.index}" id="receiver_${wallet.index}" onchange="uiController.updateTransactionSummary()">
+                        <label class="form-check-label" for="receiver_${wallet.index}">
+                            <strong>Wallet ${wallet.index}</strong><br>
+                            <small class="text-muted generated-wallet-address">${wallet.address}</small>
+                            ${balanceInfo}
+                        </label>
+                    </div>
                 </div>
             `;
             
             const senderCheckboxHTML = `
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="${wallet.index}" id="sender_${wallet.index}" onchange="uiController.updateTransactionSummary()">
-                    <label class="form-check-label" for="sender_${wallet.index}">
-                        ${wallet.index}. ${wallet.address}<br>
-                        ${balanceInfo}
-                    </label>
+                <div class="generated-wallet-item">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" value="${wallet.index}" id="sender_${wallet.index}" onchange="uiController.updateTransactionSummary()">
+                        <label class="form-check-label" for="sender_${wallet.index}">
+                            <strong>Wallet ${wallet.index}</strong><br>
+                            <small class="text-muted generated-wallet-address">${wallet.address}</small>
+                            ${balanceInfo}
+                        </label>
+                    </div>
                 </div>
             `;
             
@@ -345,8 +357,10 @@ class UIController {
         let totalAmount = 0;
         
         if (mode === 'multi-send') {
-            const selectedReceivers = document.querySelectorAll('#receiverWallets input:checked');
-            selectedCount = selectedReceivers.length;
+            // Count both generated wallets and custom receivers
+            const selectedGeneratedWallets = document.querySelectorAll('#receiverWallets input:checked');
+            const selectedCustomReceivers = document.querySelectorAll('#customReceivers input:checked');
+            selectedCount = selectedGeneratedWallets.length + selectedCustomReceivers.length;
             amount = parseFloat(document.getElementById('amountPerReceiver').value) || 0;
         } else {
             const selectedSenders = document.querySelectorAll('#senderWallets input:checked');

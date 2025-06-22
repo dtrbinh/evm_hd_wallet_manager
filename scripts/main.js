@@ -260,6 +260,30 @@ async function openMultiTransceiver() {
         uiController.populateWalletDropdowns(walletsWithBalances);
         uiController.populateWalletCheckboxes(walletsWithBalances);
         
+        // Initialize custom receivers UI
+        updateCustomReceiversUI();
+        
+        // Add Enter key listener for custom receiver inputs
+        const addressInput = document.getElementById('customReceiverAddress');
+        const labelInput = document.getElementById('customReceiverLabel');
+        
+        const handleEnterKey = (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                addCustomReceiver();
+            }
+        };
+        
+        if (addressInput) {
+            addressInput.removeEventListener('keypress', handleEnterKey);
+            addressInput.addEventListener('keypress', handleEnterKey);
+        }
+        
+        if (labelInput) {
+            labelInput.removeEventListener('keypress', handleEnterKey);
+            labelInput.addEventListener('keypress', handleEnterKey);
+        }
+        
         // Show the modal
         const modal = new bootstrap.Modal(document.getElementById('multiTransceiverModal'));
         modal.show();
@@ -281,29 +305,42 @@ async function calculateGasFees() {
             document.getElementById('tokenToReceive').value;
         
         let selectedWallets = [];
+        let selectedReceivers = [];
         let amount = 0;
         
         if (mode === 'multi-send') {
-            const selectedReceivers = document.querySelectorAll('#receiverWallets input:checked');
-            selectedWallets = Array.from(selectedReceivers).map(cb => parseInt(cb.value));
+            // Get all selected receivers (both generated wallets and custom addresses)
+            selectedReceivers = getAllSelectedReceivers();
+            selectedWallets = selectedReceivers.filter(r => r.type === 'generated').map(r => r.index);
             amount = parseFloat(document.getElementById('amountPerReceiver').value) || 0;
+            
+            if (selectedReceivers.length === 0) {
+                alert('Please select at least one receiver (generated wallet or custom address)');
+                return;
+            }
         } else {
             const selectedSenders = document.querySelectorAll('#senderWallets input:checked');
             selectedWallets = Array.from(selectedSenders).map(cb => parseInt(cb.value));
             amount = parseFloat(document.getElementById('amountPerSender').value) || 0;
+            
+            if (selectedWallets.length === 0) {
+                alert('Please select at least one sender wallet');
+                return;
+            }
         }
         
-        if (selectedWallets.length === 0 || amount <= 0) {
-            alert('Please select wallets and enter amount');
+        if (amount <= 0) {
+            alert('Please enter a valid amount');
             return;
         }
         
         document.getElementById('estimatedGasFee').textContent = 'Calculating...';
         
+        const transactionCount = mode === 'multi-send' ? selectedReceivers.length : selectedWallets.length;
         const gasEstimate = await multiTransceiver.estimateMultiTransactionGas(
             mode, 
             token, 
-            selectedWallets.length, 
+            transactionCount, 
             amount
         );
         
@@ -333,14 +370,16 @@ async function executeMultiTransaction() {
             document.getElementById('tokenToReceive').value;
         
         let selectedWallets = [];
+        let selectedReceivers = [];
         let amount = 0;
         let senderWallet = null;
         let receiverWallet = null;
         
         if (mode === 'multi-send') {
             senderWallet = parseInt(document.getElementById('senderWallet').value);
-            const selectedReceivers = document.querySelectorAll('#receiverWallets input:checked');
-            selectedWallets = Array.from(selectedReceivers).map(cb => parseInt(cb.value));
+            // Get all selected receivers (both generated wallets and custom addresses)
+            selectedReceivers = getAllSelectedReceivers();
+            selectedWallets = selectedReceivers.filter(r => r.type === 'generated').map(r => r.index);
             amount = parseFloat(document.getElementById('amountPerReceiver').value) || 0;
         } else {
             receiverWallet = parseInt(document.getElementById('receiverWallet').value);
@@ -349,13 +388,14 @@ async function executeMultiTransaction() {
             amount = parseFloat(document.getElementById('amountPerSender').value) || 0;
         }
         
-        // Validate parameters
+        // Validate parameters - update to use selectedReceivers for multi-send
         const params = {
             mode,
             token,
             senderWallet,
             receiverWallet,
             selectedWallets,
+            selectedReceivers: mode === 'multi-send' ? selectedReceivers : undefined,
             amount
         };
         
@@ -365,7 +405,8 @@ async function executeMultiTransaction() {
             return;
         }
         
-        if (!confirm(`Execute ${mode} transaction for ${selectedWallets.length} wallets?\n\nTotal amount: ${(amount * selectedWallets.length).toFixed(6)} ${token}`)) {
+        const transactionCount = mode === 'multi-send' ? selectedReceivers.length : selectedWallets.length;
+        if (!confirm(`Execute ${mode} transaction for ${transactionCount} ${mode === 'multi-send' ? 'receivers' : 'wallets'}?\n\nTotal amount: ${(amount * transactionCount).toFixed(6)} ${token}`)) {
             return;
         }
         
@@ -675,6 +716,184 @@ function updateNetworkDisplay() {
         currentRPCEl.textContent = networkConfig.rpcUrl;
         currentChainIdEl.textContent = `Chain ID: ${networkConfig.chainId}`;
     }
+}
+
+/**
+ * Custom receivers management
+ */
+let customReceivers = [];
+
+/**
+ * Add a custom receiver address
+ */
+function addCustomReceiver() {
+    const addressInput = document.getElementById('customReceiverAddress');
+    const labelInput = document.getElementById('customReceiverLabel');
+    
+    if (!addressInput || !labelInput) {
+        console.error('Custom receiver input elements not found');
+        return;
+    }
+    
+    const address = addressInput.value.trim();
+    const label = labelInput.value.trim() || `Custom-${customReceivers.length + 1}`;
+    
+    // Validate address
+    if (!address) {
+        uiController.showToast('Please enter a wallet address', 'warning');
+        return;
+    }
+    
+    if (!isValidEthereumAddress(address)) {
+        uiController.showToast('Please enter a valid Ethereum address', 'error');
+        return;
+    }
+    
+    // Check for duplicates
+    if (customReceivers.some(receiver => receiver.address.toLowerCase() === address.toLowerCase())) {
+        uiController.showToast('This address has already been added', 'warning');
+        return;
+    }
+    
+    // Add to custom receivers list
+    const customReceiver = {
+        id: `custom_${Date.now()}`,
+        address: address,
+        label: label
+    };
+    
+    customReceivers.push(customReceiver);
+    
+    // Clear inputs
+    addressInput.value = '';
+    labelInput.value = '';
+    
+    // Update UI
+    updateCustomReceiversUI();
+    uiController.updateTransactionSummary();
+    
+    uiController.showToast(`Added custom receiver: ${label}`, 'success');
+}
+
+/**
+ * Remove a custom receiver
+ */
+function removeCustomReceiver(receiverId) {
+    customReceivers = customReceivers.filter(receiver => receiver.id !== receiverId);
+    updateCustomReceiversUI();
+    uiController.updateTransactionSummary();
+    uiController.showToast('Custom receiver removed', 'info');
+}
+
+/**
+ * Update custom receivers UI
+ */
+function updateCustomReceiversUI() {
+    const customReceiversDiv = document.getElementById('customReceivers');
+    if (!customReceiversDiv) return;
+    
+    if (customReceivers.length === 0) {
+        customReceiversDiv.innerHTML = '<p class="text-muted small mb-0">No custom receivers added</p>';
+        return;
+    }
+    
+    let html = '';
+    customReceivers.forEach(receiver => {
+        html += `
+            <div class="custom-receiver-item">
+                <div class="form-check d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center">
+                        <input class="form-check-input me-2" type="checkbox" value="${receiver.id}" 
+                               id="${receiver.id}" onchange="uiController.updateTransactionSummary()">
+                        <label class="form-check-label" for="${receiver.id}">
+                            <strong>${receiver.label}</strong><br>
+                            <small class="text-muted custom-receiver-address">${receiver.address}</small>
+                        </label>
+                    </div>
+                    <button class="btn btn-outline-danger btn-sm" onclick="removeCustomReceiver('${receiver.id}')" 
+                            title="Remove this receiver">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    customReceiversDiv.innerHTML = html;
+}
+
+/**
+ * Get all selected receivers (both generated wallets and custom addresses)
+ */
+function getAllSelectedReceivers() {
+    const selectedReceivers = [];
+    
+    // Get selected generated wallets
+    const generatedWalletCheckboxes = document.querySelectorAll('#receiverWallets input:checked');
+    generatedWalletCheckboxes.forEach(checkbox => {
+        const walletIndex = parseInt(checkbox.value);
+        const wallet = walletManager.getWallet(walletIndex);
+        if (wallet) {
+            selectedReceivers.push({
+                type: 'generated',
+                index: walletIndex,
+                address: wallet.address,
+                label: `Wallet ${walletIndex}`
+            });
+        }
+    });
+    
+    // Get selected custom receivers
+    const customReceiverCheckboxes = document.querySelectorAll('#customReceivers input:checked');
+    customReceiverCheckboxes.forEach(checkbox => {
+        const receiverId = checkbox.value;
+        const customReceiver = customReceivers.find(r => r.id === receiverId);
+        if (customReceiver) {
+            selectedReceivers.push({
+                type: 'custom',
+                id: receiverId,
+                address: customReceiver.address,
+                label: customReceiver.label
+            });
+        }
+    });
+    
+    return selectedReceivers;
+}
+
+/**
+ * Validate Ethereum address
+ */
+function isValidEthereumAddress(address) {
+    if (!address || typeof address !== 'string') {
+        return false;
+    }
+    
+    // Check if it's a valid hex string of 42 characters (including 0x prefix)
+    const hexRegex = /^0x[a-fA-F0-9]{40}$/;
+    if (!hexRegex.test(address)) {
+        return false;
+    }
+    
+    // Additional validation using ethers if available
+    try {
+        if (typeof ethers !== 'undefined' && ethers.utils && ethers.utils.isAddress) {
+            return ethers.utils.isAddress(address);
+        }
+    } catch (error) {
+        console.warn('Ethers address validation failed, using regex validation:', error);
+    }
+    
+    return true;
+}
+
+/**
+ * Clear all custom receivers
+ */
+function clearCustomReceivers() {
+    customReceivers = [];
+    updateCustomReceiversUI();
+    uiController.updateTransactionSummary();
 }
 
 /**

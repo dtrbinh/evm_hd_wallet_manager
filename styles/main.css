@@ -290,6 +290,119 @@
     letter-spacing: normal;
 }
 
+/* Custom receivers styling */
+.custom-receiver-item {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    padding: 8px;
+    transition: all 0.3s ease;
+}
+
+.custom-receiver-item:hover {
+    border-color: #667eea;
+    background-color: rgba(102, 126, 234, 0.05);
+}
+
+.custom-receiver-item .form-check-input:checked ~ .form-check-label {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.custom-receiver-address {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
+}
+
+/* Generated wallet cards styling (similar to custom receivers) */
+.generated-wallet-item {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    padding: 8px;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+}
+
+.generated-wallet-item:hover {
+    border-color: #667eea;
+    background-color: rgba(102, 126, 234, 0.05);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.generated-wallet-item .form-check-input:checked ~ .form-check-label {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.generated-wallet-address {
+    font-family: 'Courier New', monospace;
+    font-size: 0.85rem;
+    word-break: break-all;
+}
+
+.generated-wallet-balances {
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+.balance-item {
+    display: inline-block;
+    margin-right: 12px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background-color: rgba(108, 117, 125, 0.1);
+}
+
+.balance-item.pol-balance {
+    background-color: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.balance-item.usdt-balance {
+    background-color: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.add-custom-receiver-btn {
+    transition: all 0.3s ease;
+}
+
+.add-custom-receiver-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.custom-receiver-section {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.custom-receiver-section h6 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.custom-receiver-section .border-top {
+    border-color: #dee2e6 !important;
+}
+
+/* Generated wallets section styling */
+.generated-wallets-section {
+    padding: 8px 0;
+}
+
+.generated-wallets-section:empty::after {
+    content: "No wallets generated yet";
+    color: #6c757d;
+    font-style: italic;
+    font-size: 0.9rem;
+}
+
 /* Modal styling */
 .modal-content {
     border-radius: 15px;

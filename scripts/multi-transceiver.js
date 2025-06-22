@@ -82,9 +82,10 @@ class MultiTransceiver {
      * Execute multi-transaction (multi-send or multi-receive)
      */
     async executeMultiTransaction(params) {
-        const { mode, token, senderWallet, receiverWallet, selectedWallets, amount } = params;
+        const { mode, token, senderWallet, receiverWallet, selectedWallets, selectedReceivers, amount } = params;
         
-        console.log(`Executing ${mode} transaction: ${token}, amount: ${amount}, wallets: ${selectedWallets.length}`);
+        const totalReceivers = mode === 'multi-send' ? (selectedReceivers ? selectedReceivers.length : selectedWallets.length) : selectedWallets.length;
+        console.log(`Executing ${mode} transaction: ${token}, amount: ${amount}, receivers: ${totalReceivers}`);
         
         // Pre-check balances for multi-receive
         if (mode === 'multi-receive') {
@@ -108,26 +109,47 @@ class MultiTransceiver {
         
         try {
             if (mode === 'multi-send') {
-                // One sender to multiple receivers
+                // One sender to multiple receivers (both generated wallets and custom addresses)
                 const sender = this.walletManager.getWallet(senderWallet);
                 if (!sender) {
                     throw new Error('Sender wallet not found');
                 }
                 
-                for (let i = 0; i < selectedWallets.length; i++) {
-                    const receiverIndex = selectedWallets[i];
-                    const receiver = this.walletManager.getWallet(receiverIndex);
-                    if (!receiver) {
-                        console.warn(`Receiver wallet ${receiverIndex} not found, skipping`);
+                // Use selectedReceivers if available (includes custom addresses), otherwise fall back to selectedWallets
+                const receiversToProcess = selectedReceivers || selectedWallets.map(index => ({
+                    type: 'generated',
+                    index: index,
+                    address: this.walletManager.getWallet(index)?.address,
+                    label: `Wallet ${index}`
+                }));
+                
+                for (let i = 0; i < receiversToProcess.length; i++) {
+                    const receiverInfo = receiversToProcess[i];
+                    
+                    // Handle both generated wallets and custom addresses
+                    let receiverAddress, receiverLabel;
+                    if (receiverInfo.type === 'generated') {
+                        const receiver = this.walletManager.getWallet(receiverInfo.index);
+                        if (!receiver) {
+                            console.warn(`Receiver wallet ${receiverInfo.index} not found, skipping`);
+                            continue;
+                        }
+                        receiverAddress = receiver.address;
+                        receiverLabel = `Wallet ${receiver.index}`;
+                    } else if (receiverInfo.type === 'custom') {
+                        receiverAddress = receiverInfo.address;
+                        receiverLabel = receiverInfo.label;
+                    } else {
+                        console.warn(`Unknown receiver type, skipping`);
                         continue;
                     }
                     
                     // Show progress
-                    this.updateProgress(`Sending ${amount} ${token} to wallet ${receiver.index}...`, `Transaction ${i + 1}/${selectedWallets.length}`, i + 1);
+                    this.updateProgress(`Sending ${amount} ${token} to ${receiverLabel}...`, `Transaction ${i + 1}/${receiversToProcess.length}`, i + 1);
                     
                     const txResult = await this.walletManager.executeTransaction(
                         sender.index, 
-                        receiver.address, 
+                        receiverAddress, 
                         amount, 
                         token
                     );
@@ -135,9 +157,9 @@ class MultiTransceiver {
                     const transaction = {
                         type: 'Multi-Send',
                         from: `Wallet ${sender.index}`,
-                        to: `Wallet ${receiver.index}`,
+                        to: receiverLabel,
                         fromAddress: sender.address,
-                        toAddress: receiver.address,
+                        toAddress: receiverAddress,
                         token: token,
                         amount: amount,
                         gas_fee: txResult.gasFee,
@@ -167,7 +189,7 @@ class MultiTransceiver {
                     const completedCount = i + 1;
                     const status = txResult.success ? 'completed successfully' : 'failed';
                     this.updateProgress(
-                        `Transaction ${completedCount}/${selectedWallets.length} ${status}`,
+                        `Transaction ${completedCount}/${receiversToProcess.length} ${status}`,
                         `${successfulTransactions} successful, ${failedTransactions} failed`,
                         completedCount
                     );
@@ -175,7 +197,7 @@ class MultiTransceiver {
                     totalGasUsed += txResult.gasFee;
                     
                     // Delay between transactions to avoid nonce issues
-                    if (i < selectedWallets.length - 1) { // Don't delay after the last transaction
+                    if (i < receiversToProcess.length - 1) { // Don't delay after the last transaction
                         console.log(`Waiting 1 second before next transaction...`);
                         await new Promise(resolve => setTimeout(resolve, 1000));
                     }
@@ -396,7 +418,7 @@ class MultiTransceiver {
      * Validate transaction parameters
      */
     validateTransactionParams(params) {
-        const { mode, token, senderWallet, receiverWallet, selectedWallets, amount } = params;
+        const { mode, token, senderWallet, receiverWallet, selectedWallets, selectedReceivers, amount } = params;
         
         const errors = [];
         
@@ -412,28 +434,70 @@ class MultiTransceiver {
             errors.push('Amount must be greater than 0');
         }
         
-        if (!selectedWallets || selectedWallets.length === 0) {
-            errors.push('No wallets selected');
-        }
-        
-        if (mode === 'multi-send' && !senderWallet) {
-            errors.push('Sender wallet not selected');
-        }
-        
-        if (mode === 'multi-receive' && !receiverWallet) {
-            errors.push('Receiver wallet not selected');
-        }
-        
-        // Check for sufficient balance (basic check)
-        if (mode === 'multi-send' && senderWallet) {
-            const sender = this.walletManager.getWallet(senderWallet);
-            if (sender) {
-                const totalAmount = amount * selectedWallets.length;
-                const balance = token === 'POL' ? sender.nativePol : sender.usdt;
-                
-                if (typeof balance === 'number' && balance < totalAmount) {
-                    errors.push(`Insufficient ${token} balance. Required: ${totalAmount.toFixed(6)}, Available: ${balance.toFixed(6)}`);
+        // For multi-send, check both selectedWallets and selectedReceivers
+        if (mode === 'multi-send') {
+            const totalReceivers = selectedReceivers ? selectedReceivers.length : (selectedWallets ? selectedWallets.length : 0);
+            if (totalReceivers === 0) {
+                errors.push('No receivers selected for multi-send');
+            }
+            
+            if (!senderWallet) {
+                errors.push('Sender wallet not selected');
+            }
+            
+            // Validate custom receiver addresses
+            if (selectedReceivers) {
+                selectedReceivers.forEach((receiver, index) => {
+                    if (receiver.type === 'custom') {
+                        if (!receiver.address || typeof receiver.address !== 'string') {
+                            errors.push(`Custom receiver ${index + 1}: Invalid address`);
+                        } else if (!/^0x[a-fA-F0-9]{40}$/.test(receiver.address)) {
+                            errors.push(`Custom receiver ${index + 1}: Invalid Ethereum address format`);
+                        }
+                    }
+                });
+            }
+            
+            // Check for sufficient balance (basic check)
+            if (senderWallet) {
+                const sender = this.walletManager.getWallet(senderWallet);
+                if (sender) {
+                    const totalAmount = amount * totalReceivers;
+                    const balance = token === 'POL' ? sender.nativePol : sender.usdt;
+                    
+                    if (typeof balance === 'number' && balance < totalAmount) {
+                        errors.push(`Insufficient ${token} balance. Required: ${totalAmount.toFixed(6)}, Available: ${balance.toFixed(6)}`);
+                    }
+                    
+                    // Check if sender wallet is not in the receiver list (for generated wallets)
+                    if (selectedWallets && selectedWallets.includes(senderWallet)) {
+                        errors.push('Sender wallet cannot be in the receiver list');
+                    }
+                    
+                    // Check custom receivers for sender wallet address
+                    if (selectedReceivers) {
+                        const senderAddress = sender.address.toLowerCase();
+                        const duplicateCustomReceiver = selectedReceivers.find(r => 
+                            r.type === 'custom' && r.address.toLowerCase() === senderAddress
+                        );
+                        if (duplicateCustomReceiver) {
+                            errors.push(`Sender wallet address matches custom receiver: ${duplicateCustomReceiver.label}`);
+                        }
+                    }
                 }
+            }
+        } else if (mode === 'multi-receive') {
+            if (!selectedWallets || selectedWallets.length === 0) {
+                errors.push('No sender wallets selected for multi-receive');
+            }
+            
+            if (!receiverWallet) {
+                errors.push('Receiver wallet not selected');
+            }
+            
+            // Check if receiver wallet is not in the selected wallets list for multi-receive
+            if (receiverWallet && selectedWallets && selectedWallets.includes(receiverWallet)) {
+                errors.push('Receiver wallet cannot be in the sender list');
             }
         }
         

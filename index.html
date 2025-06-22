@@ -402,8 +402,40 @@
                         <div class="row mt-3">
                             <div class="col-12">
                                 <label class="form-label">Receiver Wallets</label>
-                                <div id="receiverWallets" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
-                                    <!-- Receiver checkboxes will be populated here -->
+                                <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                    <!-- Generated wallet receivers -->
+                                    <div class="mb-3">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-wallet"></i> Generated Wallets
+                                        </h6>
+                                        <div id="receiverWallets" class="generated-wallets-section">
+                                            <!-- Receiver checkboxes will be populated here -->
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Custom receivers section -->
+                                    <div class="border-top pt-3 custom-receiver-section">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-plus-circle"></i> Custom Receivers
+                                        </h6>
+                                        
+                                        <!-- Add custom receiver input -->
+                                        <div class="input-group mb-3">
+                                            <input type="text" class="form-control" id="customReceiverAddress" 
+                                                placeholder="Enter wallet address (0x...)" maxlength="42">
+                                            <input type="text" class="form-control" id="customReceiverLabel" 
+                                                placeholder="Optional label" maxlength="20">
+                                            <button class="btn btn-outline-primary add-custom-receiver-btn" type="button" id="addCustomReceiverBtn" 
+                                                onclick="addCustomReceiver()">
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Custom receivers list -->
+                                        <div id="customReceivers">
+                                            <!-- Custom receiver checkboxes will be populated here -->
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -433,8 +465,15 @@
                         <div class="row mt-3">
                             <div class="col-12">
                                 <label class="form-label">Sender Wallets</label>
-                                <div id="senderWallets" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
-                                    <!-- Sender checkboxes will be populated here -->
+                                <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                                    <div class="mb-3">
+                                        <h6 class="mb-2">
+                                            <i class="fas fa-wallet"></i> Generated Wallets
+                                        </h6>
+                                        <div id="senderWallets" class="generated-wallets-section">
+                                            <!-- Sender checkboxes will be populated here -->
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
