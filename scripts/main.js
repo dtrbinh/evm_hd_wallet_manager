@@ -677,6 +677,47 @@ function updateNetworkDisplay() {
     }
 }
 
+/**
+ * Toggle seed phrase visibility
+ */
+function toggleSeedPhraseVisibility() {
+    const seedPhraseInput = document.getElementById('seedPhrase');
+    const toggleButton = document.getElementById('seedPhraseToggle');
+    const toggleIcon = document.getElementById('seedPhraseToggleIcon');
+    
+    if (!seedPhraseInput || !toggleButton || !toggleIcon) {
+        console.error('Seed phrase toggle elements not found');
+        return;
+    }
+    
+    const isCurrentlyObscured = seedPhraseInput.classList.contains('obscured') || 
+                               seedPhraseInput.style.webkitTextSecurity === 'disc';
+    
+    if (isCurrentlyObscured) {
+        // Show text
+        seedPhraseInput.style.webkitTextSecurity = 'none';
+        seedPhraseInput.style.fontFamily = 'inherit';
+        seedPhraseInput.style.letterSpacing = 'normal';
+        seedPhraseInput.classList.remove('obscured');
+        seedPhraseInput.classList.add('visible');
+        
+        // Change icon to eye-slash
+        toggleIcon.className = 'fas fa-eye-slash';
+        toggleButton.title = 'Hide seed phrase';
+    } else {
+        // Hide text
+        seedPhraseInput.style.webkitTextSecurity = 'disc';
+        seedPhraseInput.style.fontFamily = 'text-security-disc, monospace';
+        seedPhraseInput.style.letterSpacing = '2px';
+        seedPhraseInput.classList.remove('visible');
+        seedPhraseInput.classList.add('obscured');
+        
+        // Change icon to eye
+        toggleIcon.className = 'fas fa-eye';
+        toggleButton.title = 'Show seed phrase';
+    }
+}
+
 // Global error handler
 window.addEventListener('error', function(e) {
     console.error('Global error:', e.error);

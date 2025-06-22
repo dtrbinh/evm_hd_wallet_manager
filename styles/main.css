@@ -239,6 +239,57 @@
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
 }
 
+/* Password toggle styling */
+.password-input-container {
+    position: relative;
+}
+
+.password-input {
+    padding-right: 45px !important;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    color: #6c757d;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.password-toggle-btn:hover {
+    color: #495057;
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.password-toggle-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.25);
+}
+
+.password-toggle-btn i {
+    transition: all 0.3s ease;
+}
+
+/* Text security disc styling for obscured text */
+.password-input.obscured {
+    -webkit-text-security: disc;
+    font-family: text-security-disc, monospace;
+    letter-spacing: 2px;
+}
+
+.password-input.visible {
+    -webkit-text-security: none;
+    font-family: inherit;
+    letter-spacing: normal;
+}
+
 /* Modal styling */
 .modal-content {
     border-radius: 15px;
