@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /static/
+Allow: /styles/
+Allow: /scripts/
+
+# Sitemap
+Sitemap: https://yourdomain.com/sitemap.xml
+
+# Crawl delay
+Crawl-delay: 1 

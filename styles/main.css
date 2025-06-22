@@ -1,4 +1,71 @@
-/* Custom CSS for HD Wallet Manager */
+/* Custom CSS for EVM HD Wallet Manager */
+
+/* Accessibility styles */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.sr-only-focusable:focus {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 0.25rem 0.5rem !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    clip: auto !important;
+    white-space: normal !important;
+    z-index: 100000 !important;
+    top: 0 !important;
+    left: 0 !important;
+}
+
+/* Focus styles for better accessibility */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+.btn:focus {
+    outline: 2px solid #667eea !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25) !important;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .text-gradient {
+        background: none !important;
+        -webkit-text-fill-color: initial !important;
+        color: #000 !important;
+    }
+    
+    .card {
+        border: 2px solid #000 !important;
+    }
+    
+    .btn {
+        border: 2px solid #000 !important;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
 
 /* Gradient text */
 .text-gradient {

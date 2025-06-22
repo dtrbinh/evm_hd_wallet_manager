@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" width="180" height="180">
+  <defs>
+    <linearGradient id="walletGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" rx="30" fill="url(#walletGradient)"/>
+  <path d="M45 67h90c6.2 0 11.2 5 11.2 11.2v45c0 6.2-5 11.2-11.2 11.2H45c-6.2 0-11.2-5-11.2-11.2v-45c0-6.2 5-11.2 11.2-11.2z" fill="white" opacity="0.9"/>
+  <path d="M45 56h78c6.2 0 11.2 5 11.2 11.2v5.6H45c-6.2 0-11.2-5-11.2-11.2s5-11.2 11.2-11.2z" fill="white" opacity="0.7"/>
+  <circle cx="112" cy="101" r="8.5" fill="#667eea"/>
+  <rect x="56" y="90" width="34" height="5.6" fill="#667eea" opacity="0.6"/>
+  <rect x="56" y="106" width="22" height="5.6" fill="#667eea" opacity="0.6"/>
+  <g transform="translate(30, 30)">
+    <path d="M90 15L105 30L90 45L75 30Z" fill="white" opacity="0.3"/>
+    <path d="M15 75L30 90L45 75L30 60Z" fill="white" opacity="0.3"/>
+    <path d="M105 105L120 120L105 135L90 120Z" fill="white" opacity="0.3"/>
+  </g>
+</svg> 

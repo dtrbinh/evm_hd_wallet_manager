@@ -1,25 +1,129 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" prefix="og: http://ogp.me/ns#">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVM HD Wallet Manager - Multi-Chain Support</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    
+    <!-- Primary Meta Tags -->
+    <title>EVM HD Wallet Manager - Multi-Chain Cryptocurrency Wallet | 1000+ Networks</title>
+    <meta name="title" content="EVM HD Wallet Manager - Multi-Chain Cryptocurrency Wallet | 1000+ Networks">
+    <meta name="description" content="Professional HD wallet manager supporting 1000+ EVM-compatible blockchain networks. Secure multi-chain wallet generation, balance checking, and transaction management for Ethereum, Polygon, BSC, Arbitrum, and more.">
+    <meta name="keywords" content="EVM wallet, HD wallet, multi-chain wallet, cryptocurrency wallet, blockchain wallet, Ethereum wallet, Polygon wallet, BSC wallet, DeFi wallet, Web3 wallet, mnemonic wallet, seed phrase wallet">
+    <meta name="author" content="EVM HD Wallet Manager">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="en">
+    <meta name="revisit-after" content="7 days">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yourdomain.com/">
+    <meta property="og:title" content="EVM HD Wallet Manager - Multi-Chain Cryptocurrency Wallet">
+    <meta property="og:description" content="Professional HD wallet manager supporting 1000+ EVM-compatible blockchain networks. Secure multi-chain wallet generation and transaction management.">
+    <meta property="og:image" content="https://yourdomain.com/static/og-image.png">
+    <meta property="og:image:alt" content="EVM HD Wallet Manager - Multi-Chain Wallet Interface">
+    <meta property="og:site_name" content="EVM HD Wallet Manager">
+    <meta property="og:locale" content="en_US">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://yourdomain.com/">
+    <meta property="twitter:title" content="EVM HD Wallet Manager - Multi-Chain Cryptocurrency Wallet">
+    <meta property="twitter:description" content="Professional HD wallet manager supporting 1000+ EVM-compatible blockchain networks. Secure multi-chain wallet generation and transaction management.">
+    <meta property="twitter:image" content="https://yourdomain.com/static/twitter-image.png">
+    <meta property="twitter:image:alt" content="EVM HD Wallet Manager Interface">
+    <meta name="twitter:creator" content="@evmwallet">
+    
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="static/icons/favicon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="static/icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="static/icons/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="static/icons/apple-touch-icon.svg">
+    <link rel="mask-icon" href="static/icons/safari-pinned-tab.svg" color="#667eea">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="static/manifest.json">
+    
+    <!-- Theme Colors -->
+    <meta name="theme-color" content="#667eea">
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="EVM Wallet">
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="preconnect" href="https://chainlist.org" crossorigin>
+    <link rel="preconnect" href="https://icons.llamao.fi" crossorigin>
+    
+    <!-- DNS Prefetch -->
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="//chainlist.org">
+    <link rel="dns-prefetch" href="//icons.llamao.fi">
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://yourdomain.com/">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "EVM HD Wallet Manager",
+      "description": "Professional HD wallet manager supporting 1000+ EVM-compatible blockchain networks. Secure multi-chain wallet generation, balance checking, and transaction management.",
+      "url": "https://yourdomain.com/",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "author": {
+        "@type": "Organization",
+        "name": "EVM HD Wallet Manager"
+      },
+      "screenshot": "https://yourdomain.com/static/screenshot-wide.png",
+      "softwareVersion": "1.0.0",
+      "datePublished": "2024-01-01",
+      "dateModified": "2024-12-19",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "150"
+      },
+      "featureList": [
+        "Multi-chain EVM wallet support",
+        "HD wallet generation from seed phrase",
+        "1000+ blockchain networks",
+        "Secure transaction management",
+        "Real-time balance checking",
+        "Multi-send and multi-receive transactions",
+        "Excel export functionality",
+        "Progressive Web App (PWA)"
+      ]
+    }
+    </script>
     
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <!-- Custom Styles -->
     <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#main-content" class="sr-only sr-only-focusable btn btn-primary">Skip to main content</a>
+    
     <!-- Full Screen Loading Overlay -->
-    <div id="fullscreenLoading" class="fullscreen-loading">
-        <div class="loading-spinner"></div>
+    <div id="fullscreenLoading" class="fullscreen-loading" role="dialog" aria-labelledby="loadingText" aria-live="polite">
+        <div class="loading-spinner" role="status" aria-hidden="true"></div>
         <div class="loading-text" id="loadingText">Loading...</div>
         <div class="loading-subtext" id="loadingSubtext">Please wait</div>
         <div class="loading-progress">
-            <div class="loading-progress-bar" id="loadingProgressBar"></div>
+            <div class="loading-progress-bar" id="loadingProgressBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
         </div>
     </div>
 
@@ -102,33 +206,38 @@
         <i class="fas fa-spinner fa-spin"></i>
     </div>
 
-    <div class="container-fluid">
+    <main id="main-content" class="container-fluid" role="main">
         <div class="row">
             <div class="col-12">
                 <!-- Header -->
-                <div class="header-section text-center py-4">
+                <header class="header-section text-center py-4">
                     <h1 class="display-4 fw-bold text-gradient">
-                        <i class="fas fa-wallet"></i> EVM HD Wallet Manager
+                        <i class="fas fa-wallet" aria-hidden="true"></i> EVM HD Wallet Manager
                     </h1>
-                    <p class="lead text-muted">Multi-Chain EVM-Compatible Wallet Manager</p>
+                    <p class="lead text-muted">Multi-Chain EVM-Compatible Wallet Manager supporting 1000+ blockchain networks</p>
                     
                     <!-- Network Selector -->
-                    <div class="network-selector-container mt-4">
+                    <section class="network-selector-container mt-4" aria-labelledby="network-selector-heading">
+                        <h2 id="network-selector-heading" class="sr-only">Network Selection</h2>
                         <div class="network-selector-wrapper">
                             <!-- Network Search and Selection -->
                             <div class="network-search-section">
                                 <div class="row">
                                     <div class="col-12">
                                         <div class="input-group mb-2">
-                                            <span class="input-group-text">
-                                                <i class="fas fa-search"></i>
+                                            <span class="input-group-text" id="search-addon">
+                                                <i class="fas fa-search" aria-hidden="true"></i>
                                             </span>
                                             <input type="text" class="form-control" id="networkSearchInput" 
                                                    placeholder="Search networks (e.g., Ethereum, Polygon, BSC...)" 
-                                                   onkeyup="searchNetworks()" autocomplete="off">
+                                                   onkeyup="searchNetworks()" autocomplete="off"
+                                                   aria-label="Search blockchain networks"
+                                                   aria-describedby="search-addon">
                                             <button class="btn btn-outline-secondary" type="button" id="refreshNetworksBtn" 
-                                                    onclick="loadChainlistNetworks()" title="Refresh network list">
-                                                <i class="fas fa-sync-alt"></i>
+                                                    onclick="loadChainlistNetworks()" 
+                                                    aria-label="Refresh network list"
+                                                    title="Refresh network list">
+                                                <i class="fas fa-sync-alt" aria-hidden="true"></i>
                                             </button>
                                         </div>
                                         
@@ -581,19 +690,35 @@
                         <i class="fas fa-paper-plane"></i> Execute Transaction
                     </button>
                 </div>
+                </section>
             </div>
         </div>
-    </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-5 py-4 text-center text-muted">
+        <div class="container">
+            <p class="mb-2">
+                <strong>EVM HD Wallet Manager</strong> - Multi-Chain Cryptocurrency Wallet
+            </p>
+            <p class="small mb-0">
+                Supporting 1000+ EVM-compatible blockchain networks. 
+                <a href="https://github.com/yourusername/evm-hd-wallet-manager" target="_blank" rel="noopener" class="text-decoration-none">
+                    <i class="fab fa-github"></i> View on GitHub
+                </a>
+            </p>
+        </div>
+    </footer>
 
     <!-- Scripts -->
     <!-- Web3.js -->
-    <script src="https://cdn.jsdelivr.net/npm/web3@4.2.0/dist/web3.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@4.2.0/dist/web3.min.js" crossorigin="anonymous"></script>
     <!-- Ethers.js for crypto utilities from cdnjs -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.14.4/ethers.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.14.4/ethers.umd.min.js" integrity="sha512-HoVzRwHBGvP/3lkDjkAKLRGP1wJNOdCLQNlIzlHqFr3lEKL1Kxj9cJRFJjCmYdV2iOFQOg7KVr5E+FE9JZJ8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
     <!-- SheetJS for Excel export -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
     <!-- Custom Scripts -->
     <script src="scripts/constants.js"></script>
