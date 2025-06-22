@@ -118,8 +118,8 @@
                             <!-- Network Search and Selection -->
                             <div class="network-search-section">
                                 <div class="row">
-                                    <div class="col-md-8">
-                                        <div class="input-group">
+                                    <div class="col-12">
+                                        <div class="input-group mb-2">
                                             <span class="input-group-text">
                                                 <i class="fas fa-search"></i>
                                             </span>
@@ -131,18 +131,20 @@
                                                 <i class="fas fa-sync-alt"></i>
                                             </button>
                                         </div>
+                                        
+                                        <div class="testnet-toggle-container mb-2">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="includeTestnets" 
+                                                       onchange="searchNetworks()" checked>
+                                                <label class="form-check-label" for="includeTestnets">
+                                                    Include Testnets
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
                                         <!-- Network search results dropdown -->
                                         <div id="networkSearchResults" class="network-search-results" style="display: none;">
                                             <!-- Search results will be populated here -->
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="includeTestnets" 
-                                                   onchange="searchNetworks()" checked>
-                                            <label class="form-check-label" for="includeTestnets">
-                                                Include Testnets
-                                            </label>
                                         </div>
                                     </div>
                                 </div>
