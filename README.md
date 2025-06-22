@@ -1,12 +1,12 @@
-# Ethereum HD Wallet Manager - Standalone Frontend
+# EVM HD Wallet Manager - Standalone Frontend
 
-A complete standalone frontend application for managing HD wallets on Ethereum-compatible networks (Polygon) with advanced MultiTransceiver capabilities and network switching.
+A complete standalone frontend application for managing HD wallets on EVM-compatible networks with advanced MultiTransceiver capabilities and comprehensive network switching.
 
 ## Features
 
 - **Pure Frontend**: No backend server required - runs entirely in the browser
-- **Ethereum Compatible**: Supports Ethereum-compatible networks with HD wallet generation
-- **Network Switching**: Toggle between Polygon Mainnet and Amoy Testnet with live switching
+- **Multi-Chain EVM Support**: Supports 1000+ EVM-compatible networks with HD wallet generation
+- **Advanced Network Switching**: Search and switch between any EVM network with live switching
 - **HD Wallet Generation**: Generate wallets from seed phrase with custom derivation paths
 - **Progressive Balance Checking**: Real-time balance updates with visual feedback
 - **Advanced MultiTransceiver System**: 
@@ -21,7 +21,7 @@ A complete standalone frontend application for managing HD wallets on Ethereum-c
 ## Quick Start
 
 1. **Open the application**: Simply open `index.html` in your web browser
-2. **Select network**: Choose between Polygon Mainnet or Amoy Testnet
+2. **Select network**: Search and choose from 1000+ EVM-compatible networks
 3. **Enter seed phrase**: Input your 12-24 word mnemonic
 4. **Initialize**: Click "Initialize" to set up the wallet manager
 5. **Generate wallets**: Use custom derivation path ranges
@@ -41,14 +41,15 @@ detail tumble lawsuit health feature trap security invest cart veteran lawn purs
 ## File Structure
 
 ```
-ethereum_hd_wallet_manager/
+evm_hd_wallet_manager/
 ├── index.html              # Main application file
 ├── README.md               # This documentation
 ├── styles/
 │   └── main.css            # Custom styling with glass-morphism design
 ├── scripts/
-│   ├── constants.js        # Centralized network configurations
-│   ├── wallet-manager.js   # Core wallet management with network switching
+│   ├── constants.js        # Centralized network configurations and utilities
+│   ├── network-manager.js  # Advanced network management with chainlist.org integration
+│   ├── wallet-manager.js   # Core wallet management with multi-chain support
 │   ├── multi-transceiver.js # Multi-transaction handling with progress tracking
 │   ├── ui-controller.js    # Advanced UI management with full-screen dialogs
 │   └── main.js             # Application initialization and orchestration
@@ -82,18 +83,27 @@ All dependencies are loaded via CDN:
 ## Network Support
 
 ### Supported Networks
-- **Polygon Mainnet**: Production network (Chain ID: 137)
-  - RPC: https://polygon-rpc.com
-  - Explorer: https://polygonscan.com
-  - USDT Contract: 0xc2132D05D31c914a87C6611C10748AEb04B58e8F
+- **1000+ EVM Networks**: Comprehensive support via chainlist.org integration
+  - Ethereum Mainnet, Polygon, BSC, Arbitrum, Optimism, Base, and many more
+  - Both mainnet and testnet networks
+  - Automatic RPC endpoint optimization and fallback handling
+  - Network icons and metadata from chainlist.org
 
-- **Polygon Amoy Testnet**: Test network (Chain ID: 80002)
-  - RPC: https://polygon-amoy-bor-rpc.publicnode.com
-  - Explorer: https://amoy.polygonscan.com
-  - USDT Contract: 0x41E94Eb019C0762f9Bfcf9Fb1E58725BfB0e7582
+### Featured Networks
+- **Ethereum Mainnet** (Chain ID: 1)
+- **Polygon** (Chain ID: 137)
+- **Binance Smart Chain** (Chain ID: 56)
+- **Arbitrum One** (Chain ID: 42161)
+- **Optimism** (Chain ID: 10)
+- **Base** (Chain ID: 8453)
+- **And 1000+ more EVM-compatible networks**
 
-### Network Switching
-- **Live Network Switching**: Switch between networks without reloading
+### Network Management
+- **Advanced Search**: Search networks by name, chain ID, or type
+- **Live Network Switching**: Switch between any EVM network without reloading
+- **Testnet Support**: Toggle testnet inclusion in search results
+- **Quick Access**: Buttons for popular networks
+- **Network Details**: Comprehensive information modal for each network
 - **Automatic Wallet Regeneration**: Wallets are regenerated for the new network
 - **Transaction History Preservation**: Transaction history is maintained across network switches
 - **Network-Aware Links**: Transaction hash links open the correct explorer
@@ -101,9 +111,10 @@ All dependencies are loaded via CDN:
 ## Usage
 
 ### 1. Network Selection & Initialization
-- Use the network toggle to select Mainnet or Testnet
+- Search and select from 1000+ EVM-compatible networks
+- Use quick access buttons for popular networks (Ethereum, Polygon, BSC, etc.)
+- Toggle testnet inclusion as needed
 - Enter your 12-24 word seed phrase
-- Optionally specify custom RPC URL
 - Click "Initialize" to connect to the selected network
 
 ### 2. Wallet Generation

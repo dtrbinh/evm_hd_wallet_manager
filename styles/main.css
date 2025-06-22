@@ -14,6 +14,8 @@
     color: white;
     border-radius: 15px;
     margin-bottom: 2rem;
+    margin-top: 1.5rem;
+    padding: 2rem 1.5rem;
     box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
 }
 
@@ -1319,39 +1321,98 @@
 }
 
 .current-network-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 15px;
-    padding: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    transition: all 0.3s ease;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.1) 100%);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.current-network-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%, rgba(255, 255, 255, 0.05) 100%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
 .current-network-card:hover {
-    background: rgba(255, 255, 255, 1);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.current-network-card:hover::before {
+    opacity: 1;
 }
 
 .network-status {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    width: 100%;
 }
 
 .network-info .badge, .current-network-info .badge {
-    font-size: 0.9rem;
-    padding: 8px 16px;
-    border-radius: 20px;
+    font-size: 1rem;
+    padding: 12px 20px;
+    border-radius: 25px;
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     font-weight: 600;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    margin: 0 auto;
+    white-space: nowrap;
+}
+
+.current-network-info .badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure network icons in badges are properly aligned */
+.current-network-info .badge img,
+.current-network-info .badge i {
+    margin-right: 8px;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+.current-network-info .badge img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    border-radius: 50%;
+}
+
+/* Fix for the d-flex container in the network status */
+.network-status .d-flex {
+    width: 100%;
+    justify-content: center;
 }
 
 .network-details {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 24px;
     flex-wrap: wrap;
+    margin-top: 16px;
 }
 
 .network-details * {
@@ -1361,18 +1422,32 @@
 .network-detail-item {
     display: flex;
     align-items: center;
-    font-size: 0.85rem;
-    opacity: 0.8;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.network-detail-item:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
 }
 
 .network-detail-item i {
-    margin-right: 6px;
-    width: 12px;
+    margin-right: 8px;
+    width: 14px;
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .network-detail-item span {
     font-family: 'Courier New', monospace;
     font-weight: 500;
+    color: rgba(255, 255, 255, 0.95);
 }
 
 .quick-networks h6 {
