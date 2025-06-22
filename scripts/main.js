@@ -11,8 +11,8 @@ let uiController = null;
 /**
  * Initialize the application
  */
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('HD Wallet Manager starting...');
+document.addEventListener('DOMContentLoaded', async function() {
+    console.log('HD Wallet Manager starting...'); 
     
     // Initialize UI Controller
     uiController = new UIController();
@@ -26,8 +26,25 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Progress:', message);
     };
     
-    // Initialize network display
-    updateNetworkDisplay();
+    // Initialize network manager
+    try {
+        await networkManager.init();
+        console.log('Network manager initialized successfully');
+    } catch (error) {
+        console.warn('Failed to initialize network manager:', error);
+        // Fall back to legacy networks
+        networkManager.networks = Object.values(LEGACY_NETWORKS);
+        networkManager.filteredNetworks = [...networkManager.networks];
+        networkManager.currentNetwork = LEGACY_NETWORKS.mainnet;
+        CURRENT_NETWORK = networkManager.currentNetwork;
+        
+        // Use a small delay to ensure DOM elements are ready
+        setTimeout(() => {
+            networkManager.updateCurrentNetworkDisplay();
+        }, 100);
+        
+        console.log('Using legacy networks as fallback');
+    }
     
     console.log('Application initialized successfully');
 });
@@ -52,25 +69,23 @@ async function initializeWalletManager() {
         // Create wallet manager instance
         walletManager = new HDWalletManager();
         
-        // Check current network switch state and set network before initialization
-        const networkSwitch = document.getElementById('networkSwitch');
-        const targetNetwork = networkSwitch && networkSwitch.checked ? 'testnet' : 'mainnet';
-        
-        // Switch to the selected network if it's not the default
-        if (targetNetwork !== DEFAULT_NETWORK) {
-            console.log(`Setting wallet manager to ${targetNetwork} before initialization`);
-            walletManager.switchNetwork(targetNetwork);
+        // Initialize network manager first
+        if (!networkManager.networks.length) {
+            await networkManager.init();
         }
         
-        // Initialize
-        const result = await walletManager.initialize(seedPhrase, rpcUrl || null);
+        // Use current network from network manager
+        const currentNetworkConfig = networkManager.currentNetwork;
+        
+        // Initialize with current network
+        const result = await walletManager.initialize(seedPhrase, rpcUrl || currentNetworkConfig.rpcUrl);
         
         if (result.success) {
             // Create multi-transceiver instance
             multiTransceiver = new MultiTransceiver(walletManager);
             
             // Update network display to reflect the correct network
-            updateNetworkDisplay();
+            networkManager.updateCurrentNetworkDisplay();
             
             uiController.updateFullscreenLoading('Wallet Manager Initialized!', `Ready to generate wallets on ${result.network.name}`, 100);
             uiController.showStepControls();
@@ -562,159 +577,45 @@ function showTransactionStats() {
 }
 
 /**
- * Toggle between mainnet and testnet
+ * Legacy network toggle function - now handled by NetworkManager
+ * This function is kept for backward compatibility but delegates to the new system
  */
 async function toggleNetwork() {
-    try {
-        const networkSwitch = document.getElementById('networkSwitch');
-        const targetNetwork = networkSwitch.checked ? 'testnet' : 'mainnet';
-        
-        // If wallet manager exists, switch its network
-        if (walletManager) {
-            // Store wallet generation parameters before switching
-            const hadWallets = walletManager.wallets && walletManager.wallets.length > 0;
-            const walletCount = hadWallets ? walletManager.wallets.length : 0;
-            const startIndex = 0; // Default start index
-            const endIndex = walletCount > 0 ? walletCount - 1 : 9; // Default end index
-            
-            const result = walletManager.switchNetwork(targetNetwork);
-            if (result.success) {
-                // Re-initialize wallet manager with new network if seed phrase is available
-                const seedPhrase = document.getElementById('seedPhrase').value.trim();
-                if (seedPhrase) {
-                    uiController.showFullscreenLoading('Switching Network', `Connecting to ${result.network.name}...`, 20);
-                    
-                    // Re-initialize with new network
-                    const initResult = await walletManager.initialize(seedPhrase);
-                    if (initResult.success) {
-                        // Ensure Web3 connection is properly refreshed for the new network
-                        await walletManager.refreshConnection();
-                        
-                        // Preserve transaction history before recreating multi-transceiver
-                        const existingHistory = multiTransceiver ? multiTransceiver.getTransactionHistory() : [];
-                        
-                        // Re-create multi-transceiver instance
-                        multiTransceiver = new MultiTransceiver(walletManager);
-                        
-                        // Restore transaction history
-                        if (existingHistory.length > 0) {
-                            multiTransceiver.transactionHistory = existingHistory;
-                            console.log(`Preserved ${existingHistory.length} transaction history entries across network switch`);
-                        }
-                        
-                        // If there were wallets before, regenerate them for the new network
-                        if (hadWallets) {
-                            uiController.updateFullscreenLoading('Regenerating Wallets', `Creating ${walletCount} wallets for ${result.network.name}...`, 60);
-                            
-                            // Regenerate wallets with the same parameters
-                            const wallets = walletManager.generateWallets(walletCount, startIndex, endIndex);
-                            uiController.updateWalletsTable(wallets);
-                            uiController.showStepControls();
-                            
-                            // Show totals section with cleared balances
-                            document.getElementById('totalsSection').style.display = 'block';
-                            uiController.updateTotals({
-                                wallet_count: walletCount,
-                                total_native_pol: 0,
-                                total_usdt: 0,
-                                timestamp: new Date().toISOString()
-                            });
-                        }
-                        
-                        uiController.updateFullscreenLoading('Network Switch Complete!', `Connected to ${result.network.name}`, 100);
-                        uiController.showStepControls();
-                        setTimeout(() => uiController.hideFullscreenLoading(), 1000);
-                        
-                        uiController.showToast(`Switched to ${result.network.name} and re-initialized`, 'success');
-                    } else {
-                        throw new Error(initResult.error);
-                    }
-                } else {
-                    // Just clear display if no seed phrase
-                    uiController.clearDisplay();
-                    uiController.showToast(result.message + ' - Please re-initialize with seed phrase', 'info');
-                }
-                
-                // Update UI
-                updateNetworkDisplay();
-                
-                console.log('Network switched successfully:', result.network.name);
-            }
-        } else {
-            // Just update display if no wallet manager yet
-            updateNetworkDisplay();
-            
-            // Update RPC URL field to match selected network
-            updateRpcUrlField(targetNetwork);
-            
-            uiController.showToast(`Switched to ${targetNetwork === 'testnet' ? 'Testnet' : 'Mainnet'}`, 'info');
-        }
-        
-    } catch (error) {
-        console.error('Error switching network:', error);
-        
-        // Revert switch position on error
-        const networkSwitch = document.getElementById('networkSwitch');
-        networkSwitch.checked = !networkSwitch.checked;
-        
-        if (uiController) {
-            uiController.hideFullscreenLoading();
-            uiController.showToast('Failed to switch network: ' + error.message, 'error');
-        } else {
-            alert('Failed to switch network: ' + error.message);
-        }
+    console.warn('toggleNetwork() is deprecated. Network switching is now handled by NetworkManager.');
+    
+    // For backward compatibility, we can try to switch between Polygon mainnet and testnet
+    if (networkManager.currentNetwork.chainId === 137) {
+        // Switch to Polygon testnet
+        await networkManager.switchToNetwork(80002);
+    } else {
+        // Switch to Polygon mainnet
+        await networkManager.switchToNetwork(137);
     }
 }
 
 /**
- * Update RPC URL field based on selected network
+ * Update RPC URL field based on current network (legacy function)
  */
 function updateRpcUrlField(targetNetwork) {
     const rpcUrlInput = document.getElementById('rpcUrl');
-    if (rpcUrlInput && NETWORKS[targetNetwork]) {
-        rpcUrlInput.placeholder = NETWORKS[targetNetwork].rpcUrl;
+    if (rpcUrlInput && networkManager.currentNetwork) {
+        rpcUrlInput.placeholder = networkManager.currentNetwork.rpcUrl;
         // Only update the value if it's empty or contains a default network URL
         const currentValue = rpcUrlInput.value.trim();
         if (!currentValue || 
-            currentValue === NETWORKS.mainnet.rpcUrl || 
-            currentValue === NETWORKS.testnet.rpcUrl) {
+            Object.values(LEGACY_NETWORKS).some(net => currentValue === net.rpcUrl)) {
             rpcUrlInput.value = '';
         }
     }
 }
 
 /**
- * Update network display information
+ * Update network display information (legacy function - now handled by NetworkManager)
  */
 function updateNetworkDisplay() {
-    const networkSwitch = document.getElementById('networkSwitch');
-    const currentNetworkEl = document.getElementById('currentNetwork');
-    const currentRPCEl = document.getElementById('currentRPC');
-    const currentChainIdEl = document.getElementById('currentChainId');
-    
-    if (!networkSwitch || !currentNetworkEl || !currentRPCEl || !currentChainIdEl) {
-        return;
-    }
-    
-    const isTestnet = networkSwitch.checked;
-    
-    if (walletManager) {
-        const network = walletManager.getCurrentNetwork();
-        const icon = isTestnet ? 'fas fa-flask' : 'fas fa-globe';
-        currentNetworkEl.innerHTML = `<i class="${icon} me-1"></i>${network.name}`;
-        currentNetworkEl.className = `badge ${isTestnet ? 'bg-testnet' : 'bg-mainnet'}`;
-        currentRPCEl.textContent = network.rpcUrl;
-        currentChainIdEl.textContent = `Chain ID: ${network.chainId}`;
-    } else {
-        // Default display when no wallet manager
-        const networkKey = isTestnet ? 'testnet' : 'mainnet';
-        const networkConfig = NETWORKS[networkKey];
-        const icon = isTestnet ? 'fas fa-flask' : 'fas fa-globe';
-        
-        currentNetworkEl.innerHTML = `<i class="${icon} me-1"></i>${networkConfig.name}`;
-        currentNetworkEl.className = `badge ${isTestnet ? 'bg-testnet' : 'bg-mainnet'}`;
-        currentRPCEl.textContent = networkConfig.rpcUrl;
-        currentChainIdEl.textContent = `Chain ID: ${networkConfig.chainId}`;
+    console.warn('updateNetworkDisplay() is deprecated. Use networkManager.updateCurrentNetworkDisplay() instead.');
+    if (typeof networkManager !== 'undefined' && networkManager && networkManager.updateCurrentNetworkDisplay) {
+        networkManager.updateCurrentNetworkDisplay();
     }
 }
 
@@ -939,16 +840,26 @@ function toggleSeedPhraseVisibility() {
 
 // Global error handler
 window.addEventListener('error', function(e) {
+    // Skip null errors and minor script errors
+    if (!e.error || e.error === null || e.message === 'Script error.') {
+        return;
+    }
+    
     console.error('Global error:', e.error);
-    if (uiController) {
+    if (uiController && typeof uiController.showToast === 'function') {
         uiController.showToast('An unexpected error occurred', 'error');
     }
 });
 
 // Global unhandled promise rejection handler
 window.addEventListener('unhandledrejection', function(e) {
+    // Skip null rejections
+    if (!e.reason || e.reason === null) {
+        return;
+    }
+    
     console.error('Unhandled promise rejection:', e.reason);
-    if (uiController) {
+    if (uiController && typeof uiController.showToast === 'function') {
         uiController.showToast('An unexpected error occurred', 'error');
     }
 });

@@ -1116,199 +1116,223 @@
     to { transform: translateX(0); }
 }
 
-/* Network Switch Styles */
-.network-switch-container {
+/* Network Selector Styles */
+.network-selector-container {
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
-}
-
-.network-switch-wrapper {
-    display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    padding: 20px;
 }
 
-.network-switch {
+.network-selector-wrapper {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+    max-width: 800px;
+}
+
+.network-search-section {
+    margin-bottom: 20px;
     position: relative;
-    display: inline-block;
 }
 
-.network-toggle {
-    display: none;
+.network-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 0 0 10px 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
-.network-label {
+.network-search-result {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f1f3f4;
+    cursor: pointer;
+    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 200px;
-    height: 60px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 35px;
-    position: relative;
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(15px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
 }
 
-.network-label:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.4);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
+.network-search-result:hover {
+    background-color: rgba(102, 126, 234, 0.1);
+    border-color: #667eea;
 }
 
-.network-option {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 90px;
-    height: 100%;
-    z-index: 2;
-    position: relative;
-    transition: all 0.3s ease;
-    gap: 4px;
+.network-search-result:last-child {
+    border-bottom: none;
 }
 
-.network-option i {
-    font-size: 16px;
-    color: rgba(255, 255, 255, 0.8);
-    transition: all 0.3s ease;
-}
-
-.network-option span {
-    font-size: 11px;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.8);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    transition: all 0.3s ease;
-}
-
-.network-slider {
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 92px;
-    height: 50px;
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    border-radius: 30px;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 20px rgba(40, 167, 69, 0.4);
+.network-result-info {
     display: flex;
     align-items: center;
-    justify-content: center;
 }
 
-
-
-/* Active states */
-.network-toggle:checked + .network-label .network-slider {
-    transform: translateX(104px);
-    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-    box-shadow: 0 4px 20px rgba(255, 193, 7, 0.4);
-}
-
-
-
-.network-toggle:checked + .network-label .mainnet-option {
-    opacity: 0.5;
-    transform: scale(0.95);
-}
-
-.network-toggle:not(:checked) + .network-label .testnet-option {
-    opacity: 0.5;
-    transform: scale(0.95);
-}
-
-.network-toggle:checked + .network-label .testnet-option i,
-.network-toggle:checked + .network-label .testnet-option span {
-    color: rgba(255, 255, 255, 1);
-}
-
-.network-toggle:not(:checked) + .network-label .mainnet-option i,
-.network-toggle:not(:checked) + .network-label .mainnet-option span {
-    color: rgba(255, 255, 255, 1);
-}
-
-/* Network Info Card */
-.network-info {
+.network-result-icon {
+    margin-right: 12px;
+    width: 20px;
     text-align: center;
-    width: 100%;
-    max-width: 300px;
+    color: #667eea;
+}
+
+.network-result-details h6 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.network-result-details small {
+    color: #6c757d;
+    font-size: 0.8rem;
+}
+
+.network-result-chain {
+    font-size: 0.8rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    color: #495057;
+    font-weight: 500;
+}
+
+.network-result-testnet {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.current-network-info {
+    margin-top: 20px;
 }
 
 .current-network-card {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    padding: 20px;
-    backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
     transition: all 0.3s ease;
 }
 
 .current-network-card:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 1);
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
 .network-status {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
+    text-align: center;
 }
 
-.network-info .badge {
-    font-size: 13px;
-    padding: 10px 18px;
-    border-radius: 25px;
+.network-info .badge, .current-network-info .badge {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
     font-weight: 600;
-    letter-spacing: 0.3px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    border: none;
-    text-transform: uppercase;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
 .network-details {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    align-items: center;
-    color: white;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
 .network-details * {
-    color: white !important;
+    margin: 0;
 }
 
 .network-detail-item {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 4px 0;
+    font-size: 0.85rem;
+    opacity: 0.8;
 }
 
 .network-detail-item i {
-    font-size: 12px;
-    color: white;
-    opacity: 0.9;
+    margin-right: 6px;
+    width: 12px;
 }
 
 .network-detail-item span {
-    font-size: 12px;
+    font-family: 'Courier New', monospace;
     font-weight: 500;
+}
+
+.quick-networks h6 {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.quick-network-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.quick-network-buttons .btn {
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+}
+
+.quick-network-buttons .btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
     color: white;
+    transform: translateY(-1px);
+}
+
+.quick-network-buttons .btn.active {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: white;
+}
+
+.quick-network-buttons .btn img {
+    margin-right: 4px;
+}
+
+.quick-network-buttons .btn i {
+    margin-right: 4px;
+}
+
+/* Loading state for network search */
+.network-search-loading {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+.network-search-loading i {
+    margin-right: 8px;
+}
+
+/* Empty state for network search */
+.network-search-empty {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+    font-style: italic;
 }
 
 /* Network status colors */
@@ -1324,66 +1348,125 @@
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .network-label {
-        width: 180px;
-        height: 55px;
+    .network-selector-wrapper {
+        padding: 15px;
     }
     
-    .network-option {
-        width: 80px;
+    .quick-network-buttons {
+        gap: 6px;
     }
     
-    .network-slider {
-        width: 82px;
-        height: 45px;
-    }
-    
-    .network-toggle:checked + .network-label .network-slider {
-        transform: translateX(94px);
+    .quick-network-buttons .btn {
+        font-size: 0.75rem;
+        padding: 4px 8px;
     }
     
     .current-network-card {
-        padding: 16px;
-        max-width: 280px;
+        padding: 12px;
+    }
+    
+    .network-search-results {
+        max-height: 250px;
     }
 }
 
 @media (max-width: 480px) {
-    .network-label {
-        width: 160px;
-        height: 50px;
+    .network-selector-wrapper {
+        padding: 12px;
     }
     
-    .network-option {
-        width: 70px;
+    .network-search-results {
+        max-height: 200px;
     }
     
-    .network-option i {
-        font-size: 14px;
-    }
-    
-    .network-option span {
-        font-size: 10px;
-    }
-    
-    .network-slider {
-        width: 72px;
-        height: 40px;
-    }
-    
-
-    
-    .network-toggle:checked + .network-label .network-slider {
-        transform: translateX(84px);
+    .network-search-result {
+        padding: 10px 12px;
     }
     
     .current-network-card {
-        padding: 14px;
-        max-width: 260px;
+        padding: 10px;
     }
     
-    .network-info .badge {
-        font-size: 11px;
-        padding: 8px 14px;
+    .network-info .badge, .current-network-info .badge {
+        font-size: 0.8rem;
+        padding: 6px 12px;
     }
+    
+    .quick-network-buttons .btn {
+        font-size: 0.7rem;
+        padding: 3px 6px;
+    }
+    
+    .network-details {
+        gap: 15px;
+    }
+    
+    .network-result-details h6 {
+        font-size: 0.85rem;
+    }
+    
+    .network-result-details small {
+        font-size: 0.75rem;
+    }
+}
+
+/* Additional network badge colors */
+.bg-unknown {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+    color: white !important;
+}
+
+.bg-custom {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+    color: white !important;
+}
+
+/* Network icon styling */
+.network-icon-small {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    object-fit: cover;
+    vertical-align: middle;
+}
+
+.network-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    vertical-align: middle;
+}
+
+.network-icon-large {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    vertical-align: middle;
+}
+
+.network-result-icon img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    vertical-align: middle;
+}
+
+.network-result-icon {
+    margin-right: 12px;
+    width: 20px;
+    text-align: center;
+    color: #667eea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Fallback styling for missing icons */
+.network-icon-small[src=""], 
+.network-icon[src=""],
+.network-result-icon img[src=""] {
+    display: none;
 }

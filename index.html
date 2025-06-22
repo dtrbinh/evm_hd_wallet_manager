@@ -112,30 +112,55 @@
                     </h1>
                     <p class="lead text-muted">Ethereum-Compatible Multi-Wallet Manager</p>
                     
-                    <!-- Network Switch -->
-                    <div class="network-switch-container mt-4">
-                        <div class="network-switch-wrapper">
-                            <div class="network-switch">
-                                <input type="checkbox" id="networkSwitch" class="network-toggle" onchange="toggleNetwork()">
-                                <label for="networkSwitch" class="network-label">
-                                    <div class="network-option mainnet-option">
-                                        <i class="fas fa-globe"></i>
-                                        <span>Mainnet</span>
+                    <!-- Network Selector -->
+                    <div class="network-selector-container mt-4">
+                        <div class="network-selector-wrapper">
+                            <!-- Network Search and Selection -->
+                            <div class="network-search-section">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-search"></i>
+                                            </span>
+                                            <input type="text" class="form-control" id="networkSearchInput" 
+                                                   placeholder="Search networks (e.g., Ethereum, Polygon, BSC...)" 
+                                                   onkeyup="searchNetworks()" autocomplete="off">
+                                            <button class="btn btn-outline-secondary" type="button" id="refreshNetworksBtn" 
+                                                    onclick="loadChainlistNetworks()" title="Refresh network list">
+                                                <i class="fas fa-sync-alt"></i>
+                                            </button>
+                                        </div>
+                                        <!-- Network search results dropdown -->
+                                        <div id="networkSearchResults" class="network-search-results" style="display: none;">
+                                            <!-- Search results will be populated here -->
+                                        </div>
                                     </div>
-                                    <div class="network-option testnet-option">
-                                        <i class="fas fa-flask"></i>
-                                        <span>Testnet</span>
+                                    <div class="col-md-4">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="includeTestnets" 
+                                                   onchange="searchNetworks()" checked>
+                                            <label class="form-check-label" for="includeTestnets">
+                                                Include Testnets
+                                            </label>
+                                        </div>
                                     </div>
-                                    <div class="network-slider">
-                                    </div>
-                                </label>
+                                </div>
                             </div>
-                            <div class="network-info mt-3">
+                            
+                            <!-- Current Network Display -->
+                            <div class="current-network-info mt-3">
                                 <div class="current-network-card">
                                     <div class="network-status">
-                                        <span id="currentNetwork" class="badge bg-mainnet">
-                                            <i class="fas fa-globe me-1"></i>Polygon Mainnet
-                                        </span>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span id="currentNetwork" class="badge bg-mainnet">
+                                                <i class="fas fa-globe me-1"></i>Polygon Mainnet
+                                            </span>
+                                            <button class="btn btn-sm btn-outline-secondary" onclick="showNetworkDetails()" 
+                                                    title="View network details">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                        </div>
                                         <div class="network-details mt-2">
                                             <div class="network-detail-item">
                                                 <i class="fas fa-link text-muted me-1"></i>
@@ -145,8 +170,45 @@
                                                 <i class="fas fa-hashtag text-muted me-1"></i>
                                                 <span id="currentChainId" class="text-muted small">Chain ID: 137</span>
                                             </div>
+                                            <div class="network-detail-item">
+                                                <i class="fas fa-coins text-muted me-1"></i>
+                                                <span id="currentCurrency" class="text-muted small">POL</span>
+                                            </div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Network Shortcuts -->
+                            <div class="quick-networks mt-3">
+                                <h6 class="mb-2">
+                                    <i class="fas fa-bolt"></i> Quick Networks
+                                </h6>
+                                <div class="quick-network-buttons">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="switchToQuickNetwork(1)" data-chain-id="1">
+                                        <img src="https://icons.llamao.fi/icons/chains/rsz_ethereum.jpg" class="network-icon-small" alt="Ethereum" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                                        <i class="fab fa-ethereum" style="display: none;"></i> Ethereum
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="switchToQuickNetwork(137)" data-chain-id="137">
+                                        <img src="https://icons.llamao.fi/icons/chains/rsz_polygon.jpg" class="network-icon-small" alt="Polygon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                                        <i class="fas fa-gem" style="display: none;"></i> Polygon
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="switchToQuickNetwork(56)" data-chain-id="56">
+                                        <img src="https://icons.llamao.fi/icons/chains/rsz_binance.jpg" class="network-icon-small" alt="BSC" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                                        <i class="fas fa-coins" style="display: none;"></i> BSC
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="switchToQuickNetwork(42161)" data-chain-id="42161">
+                                        <img src="https://icons.llamao.fi/icons/chains/rsz_arbitrum.jpg" class="network-icon-small" alt="Arbitrum" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                                        <i class="fas fa-layer-group" style="display: none;"></i> Arbitrum
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="switchToQuickNetwork(10)" data-chain-id="10">
+                                        <img src="https://icons.llamao.fi/icons/chains/rsz_optimism.jpg" class="network-icon-small" alt="Optimism" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                                        <i class="fas fa-circle" style="display: none;"></i> Optimism
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="switchToQuickNetwork(8453)" data-chain-id="8453">
+                                        <img src="https://icons.llamao.fi/icons/chains/rsz_base.jpg" class="network-icon-small" alt="Base" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                                        <i class="fas fa-cube" style="display: none;"></i> Base
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -533,6 +595,7 @@
     
     <!-- Custom Scripts -->
     <script src="scripts/constants.js"></script>
+    <script src="scripts/network-manager.js"></script>
     <script src="scripts/wallet-manager.js"></script>
     <script src="scripts/multi-transceiver.js"></script>
     <script src="scripts/ui-controller.js"></script>
@@ -556,13 +619,11 @@
                 derivationPathDisplay.textContent = `Path: ${APP_SETTINGS.derivationPathPrefix}{index}`;
             }
             
-            // Initialize network display
-            updateNetworkDisplay();
+            // Initialize network display (handled by network manager now)
+            // Network display will be initialized by the network manager
             
             // Update RPC URL field placeholder
-            const networkSwitch = document.getElementById('networkSwitch');
-            const initialNetwork = networkSwitch && networkSwitch.checked ? 'testnet' : 'mainnet';
-            updateRpcUrlField(initialNetwork);
+            updateRpcUrlField('mainnet');
         });
     </script>
 </body>
