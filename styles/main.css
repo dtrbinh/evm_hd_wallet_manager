@@ -1358,19 +1358,6 @@ textarea:focus,
     max-height: 40px;
 }
 
-.network-search-section .input-group .input-group-text {
-    border-right: none;
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: rgba(255, 255, 255, 0.8);
-    height: 40px !important; /* Fixed height to match input */
-    min-height: 40px;
-    max-height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 .network-search-section .form-check {
     margin-bottom: 0;
 }
@@ -1470,7 +1457,6 @@ textarea:focus,
     }
     
     .network-search-section .input-group .form-control,
-    .network-search-section .input-group .input-group-text,
     #refreshNetworksBtn {
         height: 38px !important; /* Slightly smaller on mobile */
         min-height: 38px;
