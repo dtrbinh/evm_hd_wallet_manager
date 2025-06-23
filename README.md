@@ -1,252 +1,340 @@
-# EVM HD Wallet Manager - Standalone Frontend
+# EVM HD Wallet Manager
 
-A complete standalone frontend application for managing HD wallets on EVM-compatible networks with advanced MultiTransceiver capabilities and comprehensive network switching.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-dtrbinh.github.io-blue?style=for-the-badge&logo=github)](https://dtrbinh.github.io/evm_hd_wallet_manager/)
+[![GitHub](https://img.shields.io/badge/GitHub-dtrbinh%2Fevm__hd__wallet__manager-black?style=for-the-badge&logo=github)](https://github.com/dtrbinh/evm_hd_wallet_manager)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
-## Features
+> **Professional Multi-Chain Cryptocurrency Wallet Manager**  
+> Supporting 1000+ EVM-compatible blockchain networks with advanced HD wallet generation, multi-transaction capabilities, and comprehensive network management.
 
-- **Pure Frontend**: No backend server required - runs entirely in the browser
-- **Multi-Chain EVM Support**: Supports 1000+ EVM-compatible networks with HD wallet generation
-- **Advanced Network Switching**: Search and switch between any EVM network with live switching
-- **HD Wallet Generation**: Generate wallets from seed phrase with custom derivation paths
-- **Progressive Balance Checking**: Real-time balance updates with visual feedback
-- **Advanced MultiTransceiver System**: 
-  - Multi-Send: Send tokens from 1 wallet to multiple wallets
-  - Multi-Receive: Collect tokens from multiple wallets to 1 wallet
-  - Full-screen progress dialog with real-time transaction tracking
-  - Gas estimation and comprehensive transaction history
-- **Excel Export**: Export wallet data and transaction history with network metadata
-- **Modern UI**: Beautiful glass-morphism design with animations and responsive layout
-- **Resizable Tables**: Interactive table columns with drag-to-resize functionality
+## 🚀 **Live Application**
 
-## Quick Start
+**🌐 [https://dtrbinh.github.io/evm_hd_wallet_manager/](https://dtrbinh.github.io/evm_hd_wallet_manager/)**
 
-1. **Open the application**: Simply open `index.html` in your web browser
-2. **Select network**: Search and choose from 1000+ EVM-compatible networks
-3. **Enter seed phrase**: Input your 12-24 word mnemonic
-4. **Initialize**: Click "Initialize" to set up the wallet manager
-5. **Generate wallets**: Use custom derivation path ranges
-6. **Check balances**: Get current POL and USDT balances with progressive updates
-7. **Use MultiTransceiver**: Execute multi-wallet transactions with real-time progress tracking
+*No installation required - runs entirely in your browser!*
 
-## Example Seed Phrase
+---
 
-For testing purposes, you can use this example seed phrase:
+## ✨ **Key Features**
 
+### 🔗 **Multi-Chain Support**
+- **1000+ EVM Networks**: Comprehensive support via [chainlist.org](https://chainlist.org) integration
+- **Popular Networks**: Ethereum, Polygon, BSC, Arbitrum, Optimism, Base, and many more
+- **Live Network Switching**: Switch between networks without page reload
+- **Auto RPC Optimization**: Intelligent RPC endpoint selection and fallback handling
+
+### 💼 **HD Wallet Management**
+- **Seed Phrase Import**: Support for 12-24 word mnemonic phrases
+- **Custom Derivation Paths**: Standard Ethereum paths with customizable ranges
+- **Batch Generation**: Generate up to 100 wallets per session
+- **Real-time Balance Checking**: Progressive balance updates with visual feedback
+
+### 🔄 **Advanced MultiTransceiver**
+- **Multi-Send (1 → Many)**: Send tokens from one wallet to multiple recipients
+- **Multi-Receive (Many → 1)**: Collect tokens from multiple wallets to one destination
+- **Real-time Progress Tracking**: Full-screen progress dialog with live updates
+- **Gas Estimation**: Comprehensive gas fee calculation and optimization
+- **Transaction History**: Complete transaction logging with network metadata
+
+### 🎨 **Modern User Interface**
+- **Glass-morphism Design**: Beautiful translucent UI with modern aesthetics
+- **Responsive Layout**: Optimized for desktop, tablet, and mobile devices
+- **Interactive Tables**: Resizable columns with drag-to-resize functionality
+- **Progressive Web App**: PWA capabilities for app-like experience
+
+---
+
+## 🎯 **Quick Start**
+
+### **1. Access the Application**
+Visit: **[https://dtrbinh.github.io/evm_hd_wallet_manager/](https://dtrbinh.github.io/evm_hd_wallet_manager/)**
+
+### **2. Network Selection**
+- Search from 1000+ EVM-compatible networks
+- Use quick access buttons for popular networks
+- Toggle testnet inclusion as needed
+
+### **3. Wallet Setup**
+- Enter your 12-24 word seed phrase
+- Set derivation path range (default: 0-9)
+- Click "Initialize" to connect
+
+### **4. Wallet Operations**
+1. **Generate Wallets** - Create HD wallets from seed phrase
+2. **Check Balances** - Get real-time native and token balances
+3. **MultiTransceiver** - Execute batch transactions
+4. **Export Data** - Download wallet data and transaction history
+
+---
+
+## 🔧 **Technical Specifications**
+
+### **Architecture**
+```
+📁 Project Structure
+├── 🌐 index.html              # Main application (SEO optimized)
+├── 📋 README.md               # Project documentation
+├── 🤖 robots.txt              # Search engine crawling rules
+├── 🗺️ sitemap.xml             # Site structure for SEO
+├── 📡 feed.xml                # RSS feed for updates
+├── 🎨 styles/
+│   └── main.css               # Modern glass-morphism design
+├── ⚙️ scripts/
+│   ├── constants.js           # Network configurations & utilities
+│   ├── network-manager.js     # Chainlist.org integration
+│   ├── wallet-manager.js      # HD wallet management
+│   ├── multi-transceiver.js   # Batch transaction handling
+│   ├── ui-controller.js       # Advanced UI management
+│   └── main.js                # Application orchestration
+└── 📦 static/
+    ├── 🎯 icons/              # PWA icons and favicons
+    └── 🖼️ assets/             # Additional static resources
+```
+
+### **Dependencies (CDN)**
+- **Web3.js 4.2.0** - Blockchain interactions and smart contracts
+- **Ethers.js 6.14.4** - HD wallet generation and cryptographic utilities
+- **Bootstrap 5.1.3** - Responsive UI framework
+- **Font Awesome 6.0** - Professional icon library
+- **SheetJS** - Excel export functionality
+
+### **Browser Compatibility**
+- ✅ **Chrome/Edge** - Full support with all features
+- ✅ **Firefox** - Full support with all features  
+- ✅ **Safari** - Full support (iOS 14.5+ for mobile)
+
+---
+
+## 🌐 **Network Support**
+
+### **Featured Networks**
+| Network | Chain ID | Type | Status |
+|---------|----------|------|--------|
+| Ethereum Mainnet | 1 | Mainnet | ✅ Active |
+| Polygon | 137 | Mainnet | ✅ Active |
+| Binance Smart Chain | 56 | Mainnet | ✅ Active |
+| Arbitrum One | 42161 | L2 | ✅ Active |
+| Optimism | 10 | L2 | ✅ Active |
+| Base | 8453 | L2 | ✅ Active |
+| **+1000 more networks** | Various | All Types | ✅ Active |
+
+### **Network Features**
+- 🔍 **Advanced Search** - Search by name, chain ID, or network type
+- 🏷️ **Network Icons** - Visual network identification with blockchain logos
+- 🔄 **Live Switching** - Change networks without losing wallet state
+- 🧪 **Testnet Support** - Toggle between mainnet and testnet environments
+- ⚡ **Quick Access** - One-click access to popular networks
+
+---
+
+## 💡 **Usage Examples**
+
+### **Example: Multi-Send Transaction**
+```javascript
+// Scenario: Send 0.01 ETH from 1 wallet to 5 recipients
+1. Select Ethereum Mainnet
+2. Generate wallets (0-5 range)
+3. Choose Multi-Send mode
+4. Select sender wallet with sufficient balance
+5. Select 5 receiver wallets
+6. Set amount: 0.01 ETH per recipient
+7. Calculate gas fees
+8. Execute transaction with real-time tracking
+```
+
+### **Example: Multi-Receive Collection**
+```javascript
+// Scenario: Collect tokens from multiple wallets to main wallet
+1. Select desired network (e.g., Polygon)
+2. Choose Multi-Receive mode
+3. Select main wallet as receiver
+4. Select multiple sender wallets
+5. Set collection amount per wallet
+6. Execute batch collection with progress tracking
+```
+
+---
+
+## 🔒 **Security & Best Practices**
+
+### **Security Features**
+- 🔐 **Client-Side Only** - Private keys never leave your browser
+- 🚫 **No Data Transmission** - All operations performed locally
+- 🛡️ **Memory-Only Storage** - Private keys stored only in memory
+- 🔍 **Transaction Verification** - Always verify transaction details before execution
+
+### **⚠️ Important Security Warnings**
+- Never share your seed phrase with anyone
+- Always use testnet for learning and experimentation
+- Verify transaction details before execution
+- Use hardware wallets for large amounts
+- Keep your seed phrase backed up securely
+
+### **🧪 Testing Seed Phrase**
+For testing purposes only:
 ```
 detail tumble lawsuit health feature trap security invest cart veteran lawn purse
 ```
+**⚠️ WARNING**: This is a public seed phrase. Never use for real funds!
 
-⚠️ **Warning**: This is a publicly available seed phrase for testing only. Never use this for real funds or mainnet transactions. Always generate your own secure seed phrase for actual use.
+---
 
-## File Structure
+## 🚀 **Advanced Features**
 
+### **MultiTransceiver Capabilities**
+- **Batch Processing** - Handle multiple transactions efficiently
+- **Gas Optimization** - Intelligent gas price calculation
+- **Progress Tracking** - Real-time transaction status updates
+- **Error Handling** - Comprehensive error recovery and reporting
+- **Transaction History** - Complete audit trail with network metadata
+
+### **User Experience Enhancements**
+- **Glass-morphism UI** - Modern translucent design elements
+- **Responsive Design** - Seamless experience across all devices
+- **Progressive Loading** - Non-blocking UI updates
+- **Toast Notifications** - Non-intrusive user feedback
+- **Keyboard Navigation** - Full accessibility support
+
+### **Data Management**
+- **Excel Export** - Comprehensive wallet and transaction data export
+- **Resizable Tables** - Customizable column widths
+- **Real-time Updates** - Live balance and status updates
+- **Search & Filter** - Advanced data filtering capabilities
+
+---
+
+## 🛠️ **Development & Deployment**
+
+### **Local Development**
+```bash
+# Clone the repository
+git clone https://github.com/dtrbinh/evm_hd_wallet_manager.git
+
+# Navigate to project directory
+cd evm_hd_wallet_manager
+
+# Open in browser (no build process required)
+open index.html
 ```
-evm_hd_wallet_manager/
-├── index.html              # Main application file
-├── README.md               # This documentation
-├── styles/
-│   └── main.css            # Custom styling with glass-morphism design
-├── scripts/
-│   ├── constants.js        # Centralized network configurations and utilities
-│   ├── network-manager.js  # Advanced network management with chainlist.org integration
-│   ├── wallet-manager.js   # Core wallet management with multi-chain support
-│   ├── multi-transceiver.js # Multi-transaction handling with progress tracking
-│   ├── ui-controller.js    # Advanced UI management with full-screen dialogs
-│   └── main.js             # Application initialization and orchestration
-└── static/                 # Static assets (if any)
-```
 
-## Dependencies
+### **Deployment**
+The application is automatically deployed via GitHub Pages:
+- **Production URL**: https://dtrbinh.github.io/evm_hd_wallet_manager/
+- **Auto-deployment**: Every push to main branch
+- **CDN Optimization**: Static assets served via GitHub's CDN
 
-All dependencies are loaded via CDN:
-- **Web3.js 4.2.0**: Blockchain interactions and smart contract calls
-- **Ethers.js 6.14.4**: HD wallet generation and cryptographic utilities
-- **Bootstrap 5.1.3**: Responsive UI framework
-- **Font Awesome 6.0**: Professional icons
-- **SheetJS**: Excel export functionality with network metadata
+---
 
-## Security Notes
+## 📊 **SEO & Performance**
 
-⚠️ **Important Security Warnings**:
-- Never share your seed phrase with anyone
-- This application runs locally in your browser - ensure you're using a secure environment
-- Private keys are handled in memory only and never transmitted over the network
-- Always verify transaction details before execution
-- Use testnet for testing and learning
+### **SEO Optimizations**
+- ✅ **Meta Tags** - Comprehensive SEO meta information
+- ✅ **Open Graph** - Optimized social media sharing
+- ✅ **Structured Data** - Rich snippets for search engines
+- ✅ **Sitemap** - Complete site structure mapping
+- ✅ **RSS Feed** - Content syndication for updates
 
-## Browser Compatibility
+### **Performance Features**
+- ⚡ **Fast Loading** - Optimized assets and CDN delivery
+- 📱 **Mobile Optimized** - Progressive Web App capabilities
+- 🔄 **Caching** - Intelligent browser caching strategies
+- 🗜️ **Compression** - Gzip compression for faster delivery
 
-- **Chrome/Edge**: Full support with all features
-- **Firefox**: Full support with all features
-- **Safari**: Full support (iOS 14.5+ for mobile)
+---
 
-## Network Support
+## 🐛 **Troubleshooting**
 
-### Supported Networks
-- **1000+ EVM Networks**: Comprehensive support via chainlist.org integration
-  - Ethereum Mainnet, Polygon, BSC, Arbitrum, Optimism, Base, and many more
-  - Both mainnet and testnet networks
-  - Automatic RPC endpoint optimization and fallback handling
-  - Network icons and metadata from chainlist.org
+### **Common Issues**
 
-### Featured Networks
-- **Ethereum Mainnet** (Chain ID: 1)
-- **Polygon** (Chain ID: 137)
-- **Binance Smart Chain** (Chain ID: 56)
-- **Arbitrum One** (Chain ID: 42161)
-- **Optimism** (Chain ID: 10)
-- **Base** (Chain ID: 8453)
-- **And 1000+ more EVM-compatible networks**
+<details>
+<summary><strong>Invalid Seed Phrase Error</strong></summary>
 
-### Network Management
-- **Advanced Search**: Search networks by name, chain ID, or type
-- **Live Network Switching**: Switch between any EVM network without reloading
-- **Testnet Support**: Toggle testnet inclusion in search results
-- **Quick Access**: Buttons for popular networks
-- **Network Details**: Comprehensive information modal for each network
-- **Automatic Wallet Regeneration**: Wallets are regenerated for the new network
-- **Transaction History Preservation**: Transaction history is maintained across network switches
-- **Network-Aware Links**: Transaction hash links open the correct explorer
+- Ensure exactly 12, 15, 18, 21, or 24 words
+- Check for typos and extra spaces
+- Use standard BIP39 word list
+- Verify seed phrase format
+</details>
 
-## Usage
+<details>
+<summary><strong>Network Connection Failed</strong></summary>
 
-### 1. Network Selection & Initialization
-- Search and select from 1000+ EVM-compatible networks
-- Use quick access buttons for popular networks (Ethereum, Polygon, BSC, etc.)
-- Toggle testnet inclusion as needed
-- Enter your 12-24 word seed phrase
-- Click "Initialize" to connect to the selected network
+- Check internet connection
+- Try switching to different network
+- Use custom RPC URL if default fails
+- Clear browser cache and cookies
+</details>
 
-### 2. Wallet Generation
-- Set start/end index for derivation paths (default: 0-9, max: 100 wallets)
-- Click "1. Generate Wallets"
-- View generated wallet addresses and derivation paths
+<details>
+<summary><strong>Transaction Failures</strong></summary>
 
-### 3. Progressive Balance Checking
-- Click "2. Check Balances"
-- Watch real-time balance updates with visual feedback
-- View progressive totals and completion status
-- See Native POL and USDT balances with error handling
+- Verify sufficient balance for amount + gas fees
+- Check network congestion (increase gas price)
+- Ensure no nonce conflicts (wait and retry)
+- Verify recipient addresses are valid
+</details>
 
-### 4. Advanced MultiTransceiver
-- Click "3. MultiTransceiver"
-- Choose Multi-Send or Multi-Receive mode
-- Select wallets using interactive checkboxes
-- Configure transaction amount and token type
-- Calculate comprehensive gas fees
-- Execute with full-screen progress tracking
+<details>
+<summary><strong>Balance Check Errors</strong></summary>
 
-### 5. Data Export
-- Click "4. Save to Excel"
-- Download wallet data with network information
-- Export transaction history with network metadata
+- Network connectivity issues
+- RPC rate limiting (wait and retry)
+- Invalid token contract addresses
+- Try alternative RPC endpoints
+</details>
 
-## MultiTransceiver Features
-
-### Multi-Send (1 → Many)
-- Select one sender wallet with balance validation
-- Choose multiple receiver wallets
-- Set amount per receiver with automatic total calculation
-- Real-time gas estimation and balance checking
-
-### Multi-Receive (Many → 1)
-- Select one receiver wallet
-- Choose multiple sender wallets with balance validation
-- Set amount per sender
-- Controlled transaction execution with nonce management
-
-### Progress Tracking
-- **Full-Screen Progress Dialog**: Immersive transaction tracking
-- **Real-Time Updates**: Live progress bar and transaction counter
-- **Transaction Statistics**: Success/failed counts and gas usage
-- **Detailed Logging**: Color-coded transaction logs with timestamps
-- **Minimize/Restore**: Continue using the app while transactions run
-- **Network-Aware**: Transaction history includes network information
-
-## Advanced Features
-
-### Table Management
-- **Resizable Columns**: Drag column borders to adjust widths
-- **Address Tooltips**: Hover to see full addresses
-- **Progressive Updates**: Individual wallet rows update in real-time
-- **Visual Feedback**: Color-coded states for loading, success, and errors
-
-### User Experience
-- **Glass-Morphism Design**: Modern translucent UI elements
-- **Responsive Layout**: Works on desktop, tablet, and mobile
-- **Toast Notifications**: Non-intrusive feedback messages
-- **Loading States**: Full-screen loading with progress indicators
-- **Error Handling**: Comprehensive error messages and recovery
-
-## Configuration
-
-### Supported Tokens
-- **Native POL**: Polygon's native token (gas token)
-- **USDT**: Tether USD with network-specific contract addresses
-
-### Derivation Paths
-- **Standard**: `m/44'/60'/0'/0/{index}` (Ethereum standard)
-- **Custom Ranges**: 0-999 index range (max 100 wallets per session)
-- **Path Display**: Visual derivation path information
-
-## Troubleshooting
-
-### Common Issues
-
-1. **"Invalid seed phrase"**
-   - Ensure exactly 12, 15, 18, 21, or 24 words
-   - Check for typos and extra spaces
-   - Use standard BIP39 word list
-
-2. **"Network connection failed"**
-   - Check internet connection
-   - Try switching networks
-   - Use custom RPC URL if default fails
-
-3. **"Balance check errors"**
-   - Network connectivity issues
-   - RPC rate limiting (try again after a moment)
-   - Invalid contract addresses
-
-4. **"Transaction failures"**
-   - Insufficient balance for amount + gas fees
-   - Network congestion (increase gas price)
-   - Nonce conflicts (wait and retry)
-
-5. **"Progress dialog not updating"**
-   - Check browser console for errors
-   - Ensure JavaScript is enabled
-   - Try refreshing the page
-
-### Browser Console
+### **Debug Information**
 Open browser console (F12) for detailed error messages and debugging information.
 
-### Network Issues
-- **Mainnet**: Use for production with real tokens
-- **Testnet**: Use for testing with free test tokens
-- **RPC Issues**: Try alternative RPC URLs if provided ones fail
+---
 
-## Development Notes
+## 📄 **License**
 
-### Architecture
-- **Modular Design**: Separate files for wallet management, UI, and transactions
-- **Event-Driven**: Reactive UI updates based on transaction events
-- **State Management**: Centralized state with proper cleanup
-- **Error Boundaries**: Comprehensive error handling and user feedback
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-### Performance
-- **Controlled Concurrency**: Batch processing to avoid RPC overload
-- **Progressive Loading**: Non-blocking UI updates
-- **Memory Management**: Proper cleanup of transaction states
+---
 
-## License
+## 👨‍💻 **Author**
 
-This project is for educational and personal use. Use at your own risk.
+**dtrbinh**
+- 🌐 **Live Demo**: [dtrbinh.github.io/evm_hd_wallet_manager](https://dtrbinh.github.io/evm_hd_wallet_manager/)
+- 📧 **GitHub**: [@dtrbinh](https://github.com/dtrbinh)
+- 🐦 **Twitter**: [@dtrbinh](https://twitter.com/dtrbinh)
 
-## Support
+---
 
-For issues or questions:
-1. Check the browser console (F12) for detailed error messages
-2. Verify network connectivity and RPC endpoints
-3. Ensure you're using a supported browser
-4. Try switching networks if issues persist 
+## 🤝 **Contributing**
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## ⭐ **Show Your Support**
+
+If this project helped you, please consider giving it a ⭐ on [GitHub](https://github.com/dtrbinh/evm_hd_wallet_manager)!
+
+---
+
+## 📈 **Project Stats**
+
+![GitHub Stars](https://img.shields.io/github/stars/dtrbinh/evm_hd_wallet_manager?style=social)
+![GitHub Forks](https://img.shields.io/github/forks/dtrbinh/evm_hd_wallet_manager?style=social)
+![GitHub Issues](https://img.shields.io/github/issues/dtrbinh/evm_hd_wallet_manager)
+![GitHub Last Commit](https://img.shields.io/github/last-commit/dtrbinh/evm_hd_wallet_manager)
+
+---
+
+<div align="center">
+
+**Built with ❤️ by [dtrbinh](https://github.com/dtrbinh)**
+
+*Professional Multi-Chain Cryptocurrency Wallet Manager*
+
+[🌐 **Try it now**](https://dtrbinh.github.io/evm_hd_wallet_manager/) • [📚 **Documentation**](README.md) • [🐛 **Report Bug**](https://github.com/dtrbinh/evm_hd_wallet_manager/issues) • [💡 **Request Feature**](https://github.com/dtrbinh/evm_hd_wallet_manager/issues)
+
+</div> 
