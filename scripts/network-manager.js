@@ -24,23 +24,32 @@ class NetworkManager {
                 this.networks = AVAILABLE_NETWORKS;
             }
 
-            // Set default current network if not set
+            // Set default current network - try to find Polygon Mainnet first
             if (!this.currentNetwork) {
-                this.currentNetwork = LEGACY_NETWORKS.mainnet;
+                // Try to find Polygon Mainnet (Chain ID 137) in the loaded networks
+                const polygonMainnet = this.networks.find(n => n.chainId === 137);
+                if (polygonMainnet) {
+                    this.currentNetwork = polygonMainnet;
+                    Logger.success('Set Polygon Mainnet as default network');
+                } else {
+                    // Fallback to legacy mainnet if Polygon not found
+                    this.currentNetwork = LEGACY_NETWORKS.mainnet;
+                    Logger.warn('Polygon Mainnet not found, using legacy mainnet');
+                }
                 this.updateCurrentNetworkDisplay();
             }
 
-            // Set up legacy networks as fallback
-            this.networks = Object.values(LEGACY_NETWORKS);
-            
-            // Set current network to mainnet by default
-            this.currentNetwork = LEGACY_NETWORKS.mainnet;
-            this.updateCurrentNetworkDisplay();
-
+            Logger.success(`NetworkManager initialized with ${this.networks.length} networks`);
             return { success: true, networksCount: this.networks.length };
         } catch (error) {
             Logger.error('NetworkManager initialization failed', error);
-            return { success: false, error: error.message };
+            
+            // Fallback to legacy networks only if everything fails
+            this.networks = Object.values(LEGACY_NETWORKS);
+            this.currentNetwork = LEGACY_NETWORKS.mainnet;
+            this.updateCurrentNetworkDisplay();
+            
+            return { success: false, error: error.message, networksCount: this.networks.length };
         }
     }
 
@@ -116,19 +125,32 @@ class NetworkManager {
         
         // Return cached results if available and recent
         if (this.searchCache.has(cacheKey) && Date.now() - this.lastSearchTime < 5000) {
+            Logger.debug('Search', 'Using cached results');
             return this.searchCache.get(cacheKey);
         }
+
+        Logger.debug('Search', `Searching ${this.networks.length} networks for "${searchTerm}"`);
 
         const results = this.networks.filter(network => {
             // Use Network class properties for filtering
             const isTestnet = network instanceof Network ? network.isTestnet : (network.type === 'testnet');
             if (!includeTestnets && isTestnet) return false;
             
-            return network.name.toLowerCase().includes(searchTerm) ||
-                   network.chain.toLowerCase().includes(searchTerm) ||
-                   network.chainId.toString().includes(searchTerm) ||
-                   network.shortName.toLowerCase().includes(searchTerm);
+            // Safe property access with defaults
+            const name = (network.name || '').toLowerCase();
+            const chain = (network.chain || '').toLowerCase();
+            const chainId = network.chainId ? network.chainId.toString() : '';
+            const shortName = (network.shortName || '').toLowerCase();
+            
+            const matches = name.includes(searchTerm) ||
+                           chain.includes(searchTerm) ||
+                           chainId.includes(searchTerm) ||
+                           shortName.includes(searchTerm);
+            
+            return matches;
         });
+
+        Logger.debug('Search', `Found ${results.length} matches before caching`);
 
         // Cache results
         this.searchCache.set(cacheKey, results);
@@ -369,31 +391,58 @@ class NetworkManager {
             searchResults.innerHTML = '<div class="network-search-empty">No networks found</div>';
         } else {
             searchResults.innerHTML = networks.map(network => {
+                // Use Network class methods for better icon handling
                 let iconHtml;
-                if (network.icon && network.icon.startsWith('http')) {
-                    iconHtml = `<div class="network-result-icon">
-                        <img src="${network.icon}" alt="Network icon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
-                        <i class="fas fa-globe" style="display: none;"></i>
-                    </div>`;
+                if (network instanceof Network) {
+                    // Use Network class icon methods
+                    const iconUrl = network.iconUrl;
+                    const fontAwesomeIcon = network.getFontAwesomeIcon();
+                    
+                    if (iconUrl) {
+                        iconHtml = `<div class="network-result-icon">
+                            <img src="${iconUrl}" alt="${network.name} icon" 
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                            <i class="${fontAwesomeIcon}" style="display: none;"></i>
+                        </div>`;
+                    } else {
+                        iconHtml = `<div class="network-result-icon">
+                            <i class="${fontAwesomeIcon}"></i>
+                        </div>`;
+                    }
                 } else {
-                    iconHtml = `<div class="network-result-icon">
-                        <i class="${network.icon || 'fas fa-globe'}"></i>
-                    </div>`;
+                    // Fallback for legacy networks
+                    if (network.icon && network.icon.startsWith('http')) {
+                        iconHtml = `<div class="network-result-icon">
+                            <img src="${network.icon}" alt="${network.name} icon" 
+                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                            <i class="fas fa-globe" style="display: none;"></i>
+                        </div>`;
+                    } else {
+                        iconHtml = `<div class="network-result-icon">
+                            <i class="${network.icon || 'fas fa-globe'}"></i>
+                        </div>`;
+                    }
                 }
                 
                 const isTestnet = network instanceof Network ? network.isTestnet : (network.type === 'testnet');
+                const chainName = network.chain || 'Unknown';
+                const nativeSymbol = network.nativeCurrency?.symbol || 'ETH';
                 
                 return `
-                    <div class="network-search-result" onclick="switchToQuickNetwork(${network.chainId})">
+                    <div class="network-search-result" onclick="switchToQuickNetwork(${network.chainId})" 
+                         title="Click to switch to ${network.name}">
                         <div class="network-result-info">
                             ${iconHtml}
                             <div class="network-result-details">
-                                <h6>${network.name}</h6>
-                                <small>Chain ID: ${network.chainId} • ${network.nativeCurrency?.symbol || 'ETH'}</small>
+                                <h6 class="network-result-name">${network.name}</h6>
+                                <small class="network-result-meta">
+                                    Chain ID: ${network.chainId} • ${nativeSymbol}
+                                    ${network.shortName ? ` • ${network.shortName}` : ''}
+                                </small>
                             </div>
                         </div>
-                        <div class="network-result-chain ${isTestnet ? 'network-result-testnet' : ''}">
-                            ${network.chain || 'Unknown'}
+                        <div class="network-result-chain ${isTestnet ? 'network-result-testnet' : 'network-result-mainnet'}">
+                            ${chainName}
                         </div>
                     </div>
                 `;
@@ -504,7 +553,7 @@ function searchNetworks() {
     const includeTestnets = document.getElementById('includeTestnets')?.checked || false;
     
     if (!searchInput) {
-        console.warn('Search input not found');
+        Logger.warn('Search input not found');
         return;
     }
     
@@ -512,7 +561,7 @@ function searchNetworks() {
     const manager = networkManager || window.networkManager;
     
     if (!manager) {
-        console.warn('Network manager not found or not initialized yet');
+        Logger.warn('Network manager not found or not initialized yet');
         return;
     }
     
@@ -523,14 +572,13 @@ function searchNetworks() {
         return;
     }
     
-    console.log('Searching networks with query:', query, 'includeTestnets:', includeTestnets);
-    console.log('NetworkManager has', manager.networks ? manager.networks.length : 0, 'networks loaded');
+    Logger.debug('Search', `Query: "${query}", Include testnets: ${includeTestnets}, Networks available: ${manager.networks ? manager.networks.length : 0}`);
     
     const results = manager.searchNetworks(query, includeTestnets);
-    console.log('Search results:', results.length, 'networks found');
+    Logger.debug('Search', `Found ${results.length} results`);
     
-    if (results.length === 0) {
-        console.log('No networks found. Available networks:', manager.networks?.slice(0, 5).map(n => n.name));
+    if (results.length === 0 && manager.networks?.length > 0) {
+        Logger.debug('Search', `No results found. Sample networks: ${manager.networks.slice(0, 3).map(n => n.name).join(', ')}`);
     }
     
     manager.showSearchResults(results);
@@ -541,19 +589,19 @@ async function loadChainlistNetworks() {
     const manager = networkManager || window.networkManager;
     
     if (!manager) {
-        console.error('NetworkManager not initialized');
+        Logger.error('NetworkManager not initialized');
         return;
     }
     
     const result = await manager.loadChainlistNetworks();
     
     if (result.success) {
-        console.log(`Loaded ${result.count} networks from chainlist`);
+        Logger.success(`Loaded ${result.count} networks from chainlist`);
         if (typeof uiController !== 'undefined' && uiController.showToast) {
             uiController.showToast(`Loaded ${result.count} networks`, 'success');
         }
     } else {
-        console.error('Failed to load networks:', result.error);
+        Logger.error('Failed to load networks', result.error);
         if (typeof uiController !== 'undefined' && uiController.showToast) {
             uiController.showToast('Failed to load networks', 'error');
         }
@@ -565,10 +613,10 @@ function switchToQuickNetwork(chainId) {
     const manager = networkManager || window.networkManager;
     
     if (manager) {
-        console.log('Switching to network with chain ID:', chainId);
+        Logger.debug('Network', `Switching to chain ID: ${chainId}`);
         manager.switchToNetwork(chainId);
     } else {
-        console.warn('NetworkManager not available for network switch');
+        Logger.warn('NetworkManager not available for network switch');
     }
 }
 
@@ -579,7 +627,7 @@ function showNetworkDetails() {
     if (manager) {
         manager.showNetworkDetails();
     } else {
-        console.warn('NetworkManager not available for showing network details');
+        Logger.warn('NetworkManager not available for showing network details');
     }
 }
 

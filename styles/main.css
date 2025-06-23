@@ -1519,6 +1519,13 @@ textarea:focus,
 .network-result-testnet {
     background-color: #fff3cd;
     color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.network-result-mainnet {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
 }
 
 .current-network-info {
@@ -1841,11 +1848,38 @@ textarea:focus,
 .network-result-icon {
     margin-right: 12px;
     width: 20px;
+    height: 20px;
     text-align: center;
     color: #667eea;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
+}
+
+.network-result-icon img {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    vertical-align: middle;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+}
+
+.network-search-result:hover .network-result-icon img {
+    transform: scale(1.1);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.network-result-icon i {
+    font-size: 16px;
+    color: #667eea;
+    transition: color 0.2s ease;
+}
+
+.network-search-result:hover .network-result-icon i {
+    color: #5a6fd8;
 }
 
 /* Fallback styling for missing icons */
