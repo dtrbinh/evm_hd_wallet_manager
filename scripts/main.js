@@ -12,7 +12,7 @@ let uiController = null;
  * Initialize the application
  */
 document.addEventListener('DOMContentLoaded', async function() {
-    console.log('HD Wallet Manager starting...'); 
+    Logger.info('HD Wallet Manager starting...');
     
     // Initialize UI Controller
     uiController = new UIController();
@@ -23,13 +23,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Set up global progress update function (deprecated - using full-screen loading now)
     window.updateProgressMessage = function(message) {
-        console.log('Progress:', message);
+        Logger.debug('Progress', message);
     };
     
     // Network manager will be initialized after constants are loaded
-    console.log('Main application initialization completed');
-    
-    console.log('Application initialized successfully');
+    Logger.success('Application initialized successfully');
 });
 
 /**
@@ -90,12 +88,7 @@ async function initializeWalletManager() {
         }
         
         // Debug network configuration
-        console.log('🔧 Wallet initialization network debug:');
-        console.log('Current network config:', currentNetworkConfig);
-        console.log('Current network name:', currentNetworkConfig?.name);
-        console.log('Current network chain ID:', currentNetworkConfig?.chainId);
-        console.log('Current network RPC URL:', currentNetworkConfig?.rpcUrl || currentNetworkConfig?.rpc?.[0]);
-        console.log('Wallet manager current chain ID:', walletManager.currentChainId);
+        Logger.debug('Init', `Network: ${currentNetworkConfig?.name} (Chain ID: ${currentNetworkConfig?.chainId})`);
         
         // Initialize with current network using sanitized seed phrase
         const result = await walletManager.initialize(validation.sanitized || seedPhrase, rpcUrl || currentNetworkConfig.rpcUrl || currentNetworkConfig?.rpc?.[0]);
@@ -119,7 +112,7 @@ async function initializeWalletManager() {
         }
         
     } catch (error) {
-        console.error('Initialization error:', error);
+        Logger.error('Initialization failed', error);
         uiController.hideFullscreenLoading();
         uiController.showToast('Initialization failed: ' + error.message, 'error');
     }
@@ -136,11 +129,7 @@ async function generateWallets() {
         }
         
         // Debug current network state
-        console.log('🔧 Wallet generation network debug:');
-        console.log('Wallet manager current network:', walletManager.getCurrentNetwork()?.name);
-        console.log('Wallet manager chain ID:', walletManager.currentChainId);
-        console.log('Wallet manager RPC URL:', walletManager.rpcUrl);
-        console.log('Global current network:', CURRENT_NETWORK?.name);
+        Logger.debug('Generate', `Using ${walletManager.getCurrentNetwork()?.name} (Chain ID: ${walletManager.currentChainId})`);
         
         const startIndex = parseInt(document.getElementById('startIndex').value) || 0;
         const endIndex = parseInt(document.getElementById('endIndex').value) || 9;
@@ -176,7 +165,7 @@ async function generateWallets() {
         uiController.showToast(`Generated ${wallets.length} wallets successfully!`, 'success');
         
     } catch (error) {
-        console.error('Error generating wallets:', error);
+        Logger.error('Wallet generation failed', error);
         uiController.hideFullscreenLoading();
         uiController.showToast('Failed to generate wallets: ' + error.message, 'error');
     }
@@ -193,19 +182,10 @@ async function checkBalances() {
         }
         
         // Debug current network state
-        console.log('🔧 Balance checking network debug:');
-        console.log('Wallet manager current network:', walletManager.getCurrentNetwork()?.name);
-        console.log('Wallet manager chain ID:', walletManager.currentChainId);
-        console.log('Wallet manager RPC URL:', walletManager.rpcUrl);
-        console.log('Wallet manager USDT address (before refresh):', walletManager.usdtAddress);
-        console.log('Global current network:', CURRENT_NETWORK?.name);
-        console.log('Global current network chain ID:', CURRENT_NETWORK?.chainId);
+        Logger.debug('Balance', `Checking on ${walletManager.getCurrentNetwork()?.name} (Chain ID: ${walletManager.currentChainId})`);
         
-        // Test NetworkUtils.getUSDTAddress directly
-        console.log('🧪 Testing NetworkUtils.getUSDTAddress:');
-        console.log('  Chain ID 137 (Polygon):', NetworkUtils.getUSDTAddress(137));
-        console.log('  Chain ID 80002 (Amoy):', NetworkUtils.getUSDTAddress(80002));
-        console.log('  Current chain ID:', NetworkUtils.getUSDTAddress(walletManager.currentChainId));
+        // Force refresh USDT address for current network
+        walletManager.usdtAddress = NetworkUtils.getUSDTAddress(walletManager.currentChainId);
         
         const totalWallets = walletManager.wallets.length;
         let completedWallets = 0;
@@ -232,8 +212,8 @@ async function checkBalances() {
                 const totals = walletManager.getTotals();
                 uiController.updateTotals(totals);
                 
-                // Show progress in console
-                console.log(`Balance check progress: ${completedWallets}/${totalWallets} wallets completed`);
+                // Show progress
+                Logger.debug('Balance', `Progress: ${completedWallets}/${totalWallets} wallets completed`);
                 
                 // Show completion toast when all wallets are done
                 if (completedWallets === totalWallets) {
@@ -257,7 +237,7 @@ async function checkBalances() {
             const batchPromises = batch.map(wallet => 
                 walletManager.checkSingleWalletBalance(wallet.index, onProgress)
                     .catch(error => {
-                        console.error(`Failed to check wallet ${wallet.index}:`, error);
+                        Logger.error(`Wallet ${wallet.index} balance check failed`, error);
                         // Return error result to maintain consistency
                         return {
                             index: wallet.index,
@@ -284,10 +264,10 @@ async function checkBalances() {
         // Wait for all promises to complete
         await Promise.all(walletPromises);
         
-        console.log('Balance check completed for all wallets');
+        Logger.success('Balance check completed for all wallets');
         
     } catch (error) {
-        console.error('Error checking balances:', error);
+        Logger.error('Balance check failed', error);
         uiController.showToast('Failed to check balances: ' + error.message, 'error');
     }
 }
@@ -351,7 +331,7 @@ async function openMultiTransceiver() {
         modal.show();
         
     } catch (error) {
-        console.error('Error opening MultiTransceiver:', error);
+        Logger.error('MultiTransceiver open failed', error);
         uiController.showToast('Error opening MultiTransceiver: ' + error.message, 'error');
     }
 }

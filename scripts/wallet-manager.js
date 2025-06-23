@@ -38,24 +38,16 @@ class HDWalletManager {
      * Switch network by chain ID
      */
     switchNetwork(chainId) {
-        console.log(`🔧 WalletManager.switchNetwork called with chainId: ${chainId}`);
-        console.log(`  Current chain ID before switch: ${this.currentChainId}`);
-        
         const network = this.getNetworkByChainId(chainId);
         if (!network) {
-            const error = `Unknown network with chain ID: ${chainId}`;
-            console.error('❌', error);
-            throw new Error(error);
+            Logger.error(`Unknown network with chain ID: ${chainId}`);
+            throw new Error(`Unknown network with chain ID: ${chainId}`);
         }
-        
-        console.log(`  Found network: ${network.name} (Chain ID: ${network.chainId})`);
         
         const oldChainId = this.currentChainId;
         
         // **SINGLE SOURCE OF TRUTH: Update global network instead of local variable**
         CURRENT_NETWORK = network;
-        
-        console.log(`  Updated chain ID: ${oldChainId} → ${this.currentChainId}`);
         
         // Handle both Network class instances and legacy network objects
         if (typeof Network !== 'undefined' && network instanceof Network) {
@@ -76,7 +68,7 @@ class HDWalletManager {
         // Clear existing wallets since they're for the old network
         this.wallets = [];
         
-        console.log(`Switched from chain ID ${oldChainId} to ${network.name} (${chainId})`);
+        Logger.network(`Switched from Chain ID ${oldChainId} to ${network.name} (${chainId})`);
         
         return {
             success: true,
@@ -105,24 +97,17 @@ class HDWalletManager {
     getUSDTAddressForNetwork() {
         const currentNetwork = this.getCurrentNetwork();
         if (!currentNetwork) {
-            console.error('No current network found when getting USDT address');
+            Logger.error('No current network found when getting USDT address');
             return null;
         }
         
         const chainId = currentNetwork.chainId;
-        
-        // Get USDT address from COMMON_USDT_ADDRESSES based on chain ID
         const usdtAddress = NetworkUtils.getUSDTAddress(chainId);
         
-        console.log(`🔧 USDT Address Lookup:`);
-        console.log(`  Network: ${currentNetwork.name}`);
-        console.log(`  Chain ID: ${chainId}`);
-        console.log(`  USDT Address: ${usdtAddress || 'Not configured'}`);
-        
         if (usdtAddress) {
-            console.log(`✅ USDT address for ${currentNetwork.name} (Chain ID: ${chainId}): ${usdtAddress}`);
+            Logger.debug('USDT', `Address for ${currentNetwork.name}: ${usdtAddress}`);
         } else {
-            console.warn(`⚠️ No USDT address configured for ${currentNetwork.name} (Chain ID: ${chainId})`);
+            Logger.warn(`No USDT address configured for ${currentNetwork.name} (Chain ID: ${chainId})`);
         }
         
         return usdtAddress;
@@ -134,12 +119,9 @@ class HDWalletManager {
     refreshNetworkSettings() {
         const currentNetwork = this.getCurrentNetwork();
         if (!currentNetwork) {
-            console.error('No current network found when refreshing network settings');
+            Logger.error('No current network found when refreshing network settings');
             return false;
         }
-        
-        const oldRpcUrl = this.rpcUrl;
-        const oldUsdtAddress = this.usdtAddress;
         
         // Refresh RPC URL
         if (typeof Network !== 'undefined' && currentNetwork instanceof Network) {
@@ -154,10 +136,7 @@ class HDWalletManager {
         // Reset validation flag
         this._usdtValidated = false;
         
-        console.log(`🔧 Network Settings Refreshed:`);
-        console.log(`  Network: ${currentNetwork.name} (Chain ID: ${this.currentChainId})`);
-        console.log(`  RPC URL: ${oldRpcUrl} → ${this.rpcUrl}`);
-        console.log(`  USDT Address: ${oldUsdtAddress} → ${this.usdtAddress}`);
+        Logger.debug('Network', `Settings refreshed for ${currentNetwork.name}`);
         
         return true;
     }
@@ -177,7 +156,7 @@ class HDWalletManager {
             // Test connection
             const blockNumber = await this.web3.eth.getBlockNumber();
             const currentNetwork = this.getCurrentNetwork();
-            console.log(`Refreshed connection to ${currentNetwork.name} - Block: ${blockNumber}`);
+            Logger.success(`Connection refreshed to ${currentNetwork.name} - Block: ${blockNumber}`);
             
             return {
                 success: true,
@@ -185,7 +164,7 @@ class HDWalletManager {
                 blockNumber: blockNumber
             };
         } catch (error) {
-            console.error('Connection refresh error:', error);
+            Logger.error('Connection refresh failed', error);
             this.isInitialized = false;
             this.web3 = null;
             throw error;
@@ -239,10 +218,10 @@ class HDWalletManager {
             
             // Test connection
             const blockNumber = await this.web3.eth.getBlockNumber();
-            console.log(`Connected to ${currentNetwork.name} - Block: ${blockNumber}`);
+            Logger.success(`Connected to ${currentNetwork.name} - Block: ${blockNumber}`);
             
             this.isInitialized = true;
-            console.log(`HD Wallet Manager initialized successfully on ${currentNetwork.name}`);
+            Logger.success(`HD Wallet Manager initialized on ${currentNetwork.name}`);
             
             return { 
                 success: true, 
@@ -251,7 +230,7 @@ class HDWalletManager {
             };
             
         } catch (error) {
-            console.error('Initialization error:', error);
+            Logger.error('Initialization failed', error);
             this.isInitialized = false;
             this.web3 = null;
             return { success: false, error: error.message };
@@ -294,7 +273,7 @@ class HDWalletManager {
                 });
             }
 
-            console.log(`Generated ${this.wallets.length} HD wallets`);
+            Logger.wallet(`Generated ${this.wallets.length} HD wallets`);
             return this.wallets.map(w => ({
                 index: w.index,
                 address: w.address,
@@ -302,7 +281,7 @@ class HDWalletManager {
             }));
 
         } catch (error) {
-            console.error('Error generating wallets:', error);
+            Logger.error('Wallet generation failed', error);
             throw error;
         }
     }
@@ -317,21 +296,21 @@ class HDWalletManager {
             // Only validate if we have a USDT address configured
             if (!this.usdtAddress || this.usdtAddress === '') {
                 const currentNetwork = this.getCurrentNetwork();
-                console.warn(`No USDT address configured for ${currentNetwork ? currentNetwork.name : 'current network'}`);
+                Logger.warn(`No USDT address configured for ${currentNetwork ? currentNetwork.name : 'current network'}`);
                 return false;
             }
             
             // Simple validation - check if contract exists
             const contractCode = await this.web3.eth.getCode(this.usdtAddress);
             if (contractCode === '0x') {
-                console.warn(`USDT contract not found at ${this.usdtAddress}`);
+                Logger.warn(`USDT contract not found at ${this.usdtAddress}`);
                 return false;
             }
             
-            console.log(`USDT contract validated: ${this.usdtAddress}`);
+            Logger.debug('USDT', `Contract validated: ${this.usdtAddress}`);
             return true;
         } catch (error) {
-            console.error('Error validating USDT address:', error);
+            Logger.error('USDT validation failed', error);
             return false;
         }
     }
@@ -356,23 +335,14 @@ class HDWalletManager {
                     onProgress(walletIndex, 'checking', null);
                 }
 
-                // Debug logging for network verification
-                const currentNetwork = this.getCurrentNetwork();
-                console.log(`Checking balance for wallet ${walletIndex} on ${currentNetwork ? currentNetwork.name : 'Unknown Network'}`);
-                
                 // **SINGLE SOURCE OF TRUTH: Always use CURRENT_NETWORK.chainId directly**
                 const currentChainId = this.currentChainId;
                 const freshUsdtAddress = NetworkUtils.getUSDTAddress(currentChainId);
                 
-                console.log(`🔧 USDT Address Direct Lookup:`);
-                console.log(`  Current Chain ID: ${currentChainId}`);
-                console.log(`  Old USDT Address: ${this.usdtAddress}`);
-                console.log(`  Fresh USDT Address: ${freshUsdtAddress}`);
-                
                 // Force update USDT address
                 this.usdtAddress = freshUsdtAddress;
                 
-                console.log(`Using RPC: ${this.rpcUrl}, USDT Address: ${this.usdtAddress}`);
+                Logger.debug('Balance', `Checking wallet ${walletIndex} on Chain ID ${currentChainId}`);
 
                 // Validate USDT address before checking balances (only do this once per session per network)
                 if (!this._usdtValidated) {
@@ -431,7 +401,7 @@ class HDWalletManager {
                 return result;
                 
             } catch (error) {
-                console.error(`Error checking balance for wallet ${wallet.index}:`, error);
+                Logger.error(`Wallet ${wallet.index} balance check failed`, error);
                 
                 // Update wallet with error state
                 wallet.nativePol = 'error';
@@ -456,7 +426,7 @@ class HDWalletManager {
             }
 
         } catch (error) {
-            console.error('Error in checkSingleWalletBalance:', error);
+            Logger.error('Balance check failed', error);
             throw error;
         }
     }
@@ -477,11 +447,11 @@ class HDWalletManager {
                 results.push(result);
             }
 
-            console.log('Balance check completed for all wallets');
+            Logger.success('Balance check completed for all wallets');
             return results;
 
         } catch (error) {
-            console.error('Error checking balances:', error);
+            Logger.error('Balance check failed', error);
             throw error;
         }
     }
@@ -551,7 +521,7 @@ class HDWalletManager {
             };
             
         } catch (error) {
-            console.error('Error estimating gas:', error);
+            Logger.error('Gas estimation failed', error);
             throw error;
         }
     }
@@ -566,7 +536,7 @@ class HDWalletManager {
                 throw new Error('Sender wallet not found');
             }
 
-            console.log(`Executing ${token} transaction from wallet ${fromWalletIndex} (${fromWallet.address}) to ${toAddress}, amount: ${amount}`);
+            Logger.debug('Transaction', `Executing ${token} transaction from wallet ${fromWalletIndex} to ${toAddress}, amount: ${amount}`);
 
             let txHash = null;
             let gasFee = 0;

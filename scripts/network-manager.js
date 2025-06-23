@@ -17,10 +17,10 @@ class NetworkManager {
         try {
             // Load networks from chainlist if not already loaded
             if (AVAILABLE_NETWORKS.length === 0) {
-                console.log('Networks not loaded yet, loading from chainlist...');
+                Logger.info('Loading networks from chainlist...');
                 await this.loadChainlistNetworks();
             } else {
-                console.log(`Using ${AVAILABLE_NETWORKS.length} pre-loaded networks`);
+                Logger.info(`Using ${AVAILABLE_NETWORKS.length} pre-loaded networks`);
                 this.networks = AVAILABLE_NETWORKS;
             }
 
@@ -39,7 +39,7 @@ class NetworkManager {
 
             return { success: true, networksCount: this.networks.length };
         } catch (error) {
-            console.error('Failed to initialize NetworkManager:', error);
+            Logger.error('NetworkManager initialization failed', error);
             return { success: false, error: error.message };
         }
     }
@@ -49,7 +49,6 @@ class NetworkManager {
      */
     async loadChainlistNetworks() {
         try {
-            console.log('Loading networks from chainlist.org...');
             const response = await fetch(CHAINLIST_API_URL);
             
             if (!response.ok) {
@@ -68,17 +67,17 @@ class NetworkManager {
             // Update global variables
             AVAILABLE_NETWORKS = this.networks;
             
-            console.log(`Loaded ${this.networks.length} networks from chainlist.org`);
+            Logger.success(`Loaded ${this.networks.length} networks from chainlist.org`);
             return { success: true, count: this.networks.length };
             
         } catch (error) {
-            console.error('Failed to load networks from chainlist:', error);
+            Logger.error('Failed to load networks from chainlist', error);
             
             // Fallback to legacy networks
             this.networks = Object.values(LEGACY_NETWORKS);
             AVAILABLE_NETWORKS = this.networks;
             
-            console.log('Using fallback legacy networks');
+            Logger.warn('Using fallback legacy networks');
             return { success: false, error: error.message, fallback: true };
         }
     }
@@ -87,8 +86,6 @@ class NetworkManager {
      * Process chainlist data and return formatted networks
      */
     processChainlistData(chainlistData) {
-        console.log('Processing chainlist data into Network instances...');
-        
         // Use the Network class to create instances from chainlist data
         const networkInstances = Network.fromChainlistArray(chainlistData);
         
@@ -96,13 +93,13 @@ class NetworkManager {
         const validNetworks = networkInstances.filter(network => {
             const validation = network.validate();
             if (!validation.isValid) {
-                console.warn(`Invalid network ${network.name}:`, validation.errors);
+                Logger.debug('Network', `Invalid network ${network.name}: ${validation.errors.join(', ')}`);
                 return false;
             }
             return true;
         });
         
-        console.log(`Processed ${validNetworks.length} valid networks from ${chainlistData.length} total`);
+        Logger.debug('Network', `Processed ${validNetworks.length} valid networks from ${chainlistData.length} total`);
         return validNetworks;
     }
 
@@ -176,11 +173,11 @@ class NetworkManager {
 
             // Ensure we have a Network instance
             if (!(network instanceof Network)) {
-                console.log('Converting legacy network to Network instance');
+                Logger.debug('Network', 'Converting legacy network to Network instance');
                 network = NetworkUtils.createNetworkFromLegacy(network);
             }
 
-            console.log(`Switching to network: ${network.name} (Chain ID: ${chainId})`);
+            Logger.network(`Switching to ${network.name} (Chain ID: ${chainId})`);
 
             if (typeof uiController !== 'undefined' && uiController.showToast) {
                 uiController.showToast(`Switching to ${network.name}...`, 'info');
@@ -198,34 +195,24 @@ class NetworkManager {
             }
             
             // **Synchronize WalletManager network state**
-            console.log('🔧 NetworkManager: Checking wallet manager for network switch...');
-            console.log('  walletManager exists:', typeof walletManager !== 'undefined');
-            console.log('  walletManager is not null:', walletManager !== null);
-            console.log('  walletManager current chain ID before:', walletManager?.currentChainId);
-            
             if (typeof walletManager !== 'undefined' && walletManager !== null) {
                 try {
                     // Use wallet manager's switchNetwork method for proper network switching
-                    console.log(`🔧 Calling walletManager.switchNetwork(${chainId})...`);
                     const switchResult = walletManager.switchNetwork(chainId);
-                    console.log('🔧 Switch result:', switchResult);
                     
                     if (switchResult.success) {
-                        console.log(`✅ WalletManager switched to ${switchResult.network.name}`);
-                        console.log('  walletManager chain ID after switch:', walletManager.currentChainId);
+                        Logger.success(`WalletManager switched to ${switchResult.network.name}`);
                         
                         // Force refresh network settings to ensure everything is up to date
                         if (typeof walletManager.refreshNetworkSettings === 'function') {
-                            console.log('🔧 Calling refreshNetworkSettings...');
                             walletManager.refreshNetworkSettings();
                         }
                     } else {
-                        console.warn('❌ WalletManager switch failed:', switchResult.message);
+                        Logger.warn(`WalletManager switch failed: ${switchResult.message}`);
                     }
                 } catch (walletError) {
-                    console.warn('❌ Failed to switch WalletManager network:', walletError);
+                    Logger.warn('Failed to switch WalletManager network', walletError);
                     // Fallback: manually update properties (chain ID is now handled by CURRENT_NETWORK)
-                    console.log('🔧 Using fallback manual update...');
                     CURRENT_NETWORK = network; // Update global network (single source of truth)
                     walletManager.wallets = [];
                     walletManager.isInitialized = false;
@@ -233,11 +220,9 @@ class NetworkManager {
                     walletManager.rpcUrl = network.rpcUrl || network.getAllRpcUrls()?.[0];
                     walletManager.usdtAddress = NetworkUtils.getUSDTAddress(chainId);
                     walletManager._usdtValidated = false;
-                    console.log('  Fallback: set global network to:', CURRENT_NETWORK.name);
-                    console.log('  Fallback: set USDT address to:', walletManager.usdtAddress);
                 }
             } else {
-                console.warn('⚠️ WalletManager not available during network switch');
+                Logger.warn('WalletManager not available during network switch');
             }
             
             // Update UI
@@ -260,16 +245,11 @@ class NetworkManager {
             // Hide search results
             this.hideSearchResults();
             
-            console.log(`Successfully switched to ${network.name} (Chain ID: ${chainId})`);
-            console.log('Current network states synchronized:', {
-                networkManager: this.currentNetwork.name,
-                globalCurrent: CURRENT_NETWORK?.name,
-                walletManager: walletManager?.getCurrentNetwork()?.name
-            });
+            Logger.success(`Successfully switched to ${network.name} (Chain ID: ${chainId})`);
             
             return true;
         } catch (error) {
-            console.error('Failed to switch network:', error);
+            Logger.error('Failed to switch network', error);
             if (typeof uiController !== 'undefined' && uiController.showToast) {
                 uiController.showToast(`Failed to switch network: ${error.message}`, 'error');
             }
