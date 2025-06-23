@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>EVM HD Wallet Manager Updates</title>
+    <description>Latest updates and releases for EVM HD Wallet Manager - Multi-Chain Cryptocurrency Wallet by dtrbinh</description>
+    <link>https://dtrbinh.github.io/evm_hd_wallet_manager/</link>
+    <atom:link href="https://dtrbinh.github.io/evm_hd_wallet_manager/feed.xml" rel="self" type="application/rss+xml"/>
+    <language>en-US</language>
+    <managingEditor>dtrbinh@example.com (dtrbinh)</managingEditor>
+    <webMaster>dtrbinh@example.com (dtrbinh)</webMaster>
+    <lastBuildDate>Thu, 19 Dec 2024 00:00:00 +0000</lastBuildDate>
+    <pubDate>Thu, 19 Dec 2024 00:00:00 +0000</pubDate>
+    <ttl>1440</ttl>
+    <image>
+      <url>https://dtrbinh.github.io/evm_hd_wallet_manager/static/icons/apple-touch-icon.svg</url>
+      <title>EVM HD Wallet Manager</title>
+      <link>https://dtrbinh.github.io/evm_hd_wallet_manager/</link>
+      <width>180</width>
+      <height>180</height>
+    </image>
+    
+    <item>
+      <title>EVM HD Wallet Manager v1.0.0 - Multi-Chain Support Launch</title>
+      <description>Launch of EVM HD Wallet Manager with support for 1000+ EVM-compatible blockchain networks including Ethereum, Polygon, BSC, Arbitrum, Optimism, Base and more. Features include HD wallet generation, multi-send/receive transactions, chainlist.org integration, and comprehensive network management.</description>
+      <link>https://dtrbinh.github.io/evm_hd_wallet_manager/</link>
+      <guid>https://dtrbinh.github.io/evm_hd_wallet_manager/#v1.0.0</guid>
+      <pubDate>Thu, 19 Dec 2024 00:00:00 +0000</pubDate>
+      <category>Cryptocurrency</category>
+      <category>Blockchain</category>
+      <category>Web3</category>
+      <category>DeFi</category>
+    </item>
+    
+    <item>
+      <title>Multi-Chain Network Support Added</title>
+      <description>Added comprehensive support for 1000+ EVM-compatible networks through chainlist.org integration. Users can now search, filter, and switch between any EVM network with automatic RPC optimization and network icon display.</description>
+      <link>https://dtrbinh.github.io/evm_hd_wallet_manager/#networks</link>
+      <guid>https://dtrbinh.github.io/evm_hd_wallet_manager/#networks</guid>
+      <pubDate>Thu, 19 Dec 2024 00:00:00 +0000</pubDate>
+      <category>Networks</category>
+      <category>EVM</category>
+      <category>Chainlist</category>
+    </item>
+    
+    <item>
+      <title>Multi-Transaction Features Released</title>
+      <description>Introduced advanced multi-send and multi-receive transaction capabilities with real-time progress tracking, gas estimation, and comprehensive transaction history. Perfect for batch operations and fund management across multiple wallets.</description>
+      <link>https://dtrbinh.github.io/evm_hd_wallet_manager/#multitransceiver</link>
+      <guid>https://dtrbinh.github.io/evm_hd_wallet_manager/#multitransceiver</guid>
+      <pubDate>Thu, 19 Dec 2024 00:00:00 +0000</pubDate>
+      <category>Transactions</category>
+      <category>Batch Operations</category>
+      <category>Multi-Send</category>
+    </item>
+  </channel>
+</rss> 

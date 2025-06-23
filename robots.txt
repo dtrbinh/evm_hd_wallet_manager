@@ -3,9 +3,18 @@ Allow: /
 Allow: /static/
 Allow: /styles/
 Allow: /scripts/
+Allow: /index.html
+
+# Block development files
+Disallow: /.git/
+Disallow: /node_modules/
+Disallow: /*.md$
 
 # Sitemap
 Sitemap: https://dtrbinh.github.io/evm_hd_wallet_manager/sitemap.xml
 
 # Crawl delay
-Crawl-delay: 1 
+Crawl-delay: 1
+
+# Host declaration
+Host: https://dtrbinh.github.io 

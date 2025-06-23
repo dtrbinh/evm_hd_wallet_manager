@@ -6,13 +6,25 @@
     <url>
         <loc>https://dtrbinh.github.io/evm_hd_wallet_manager/</loc>
         <lastmod>2024-12-19</lastmod>
-        <changefreq>weekly</changefreq>
+        <changefreq>daily</changefreq>
         <priority>1.0</priority>
     </url>
     <url>
         <loc>https://dtrbinh.github.io/evm_hd_wallet_manager/index.html</loc>
         <lastmod>2024-12-19</lastmod>
-        <changefreq>weekly</changefreq>
+        <changefreq>daily</changefreq>
         <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://dtrbinh.github.io/evm_hd_wallet_manager/404.html</loc>
+        <lastmod>2024-12-19</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.3</priority>
+    </url>
+    <url>
+        <loc>https://dtrbinh.github.io/evm_hd_wallet_manager/feed.xml</loc>
+        <lastmod>2024-12-19</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.8</priority>
     </url>
 </urlset> 
