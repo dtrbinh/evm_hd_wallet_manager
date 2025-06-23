@@ -198,24 +198,46 @@ class NetworkManager {
             }
             
             // **Synchronize WalletManager network state**
+            console.log('🔧 NetworkManager: Checking wallet manager for network switch...');
+            console.log('  walletManager exists:', typeof walletManager !== 'undefined');
+            console.log('  walletManager is not null:', walletManager !== null);
+            console.log('  walletManager current chain ID before:', walletManager?.currentChainId);
+            
             if (typeof walletManager !== 'undefined' && walletManager !== null) {
                 try {
-                    // Update wallet manager's network chain ID
-                    walletManager.currentNetworkChainId = chainId;
+                    // Use wallet manager's switchNetwork method for proper network switching
+                    console.log(`🔧 Calling walletManager.switchNetwork(${chainId})...`);
+                    const switchResult = walletManager.switchNetwork(chainId);
+                    console.log('🔧 Switch result:', switchResult);
                     
-                    // Clear existing wallets since they're for the old network
+                    if (switchResult.success) {
+                        console.log(`✅ WalletManager switched to ${switchResult.network.name}`);
+                        console.log('  walletManager chain ID after switch:', walletManager.currentChainId);
+                        
+                        // Force refresh network settings to ensure everything is up to date
+                        if (typeof walletManager.refreshNetworkSettings === 'function') {
+                            console.log('🔧 Calling refreshNetworkSettings...');
+                            walletManager.refreshNetworkSettings();
+                        }
+                    } else {
+                        console.warn('❌ WalletManager switch failed:', switchResult.message);
+                    }
+                } catch (walletError) {
+                    console.warn('❌ Failed to switch WalletManager network:', walletError);
+                    // Fallback: manually update properties (chain ID is now handled by CURRENT_NETWORK)
+                    console.log('🔧 Using fallback manual update...');
+                    CURRENT_NETWORK = network; // Update global network (single source of truth)
                     walletManager.wallets = [];
                     walletManager.isInitialized = false;
                     walletManager.web3 = null;
-                    
-                    // Update RPC URL and USDT address using Network class methods
                     walletManager.rpcUrl = network.rpcUrl || network.getAllRpcUrls()?.[0];
-                    walletManager.usdtAddress = network.usdtAddress || NetworkUtils.getUSDTAddress(chainId);
-                    
-                    console.log(`WalletManager synchronized to ${network.name}`);
-                } catch (walletError) {
-                    console.warn('Failed to synchronize WalletManager:', walletError);
+                    walletManager.usdtAddress = NetworkUtils.getUSDTAddress(chainId);
+                    walletManager._usdtValidated = false;
+                    console.log('  Fallback: set global network to:', CURRENT_NETWORK.name);
+                    console.log('  Fallback: set USDT address to:', walletManager.usdtAddress);
                 }
+            } else {
+                console.warn('⚠️ WalletManager not available during network switch');
             }
             
             // Update UI

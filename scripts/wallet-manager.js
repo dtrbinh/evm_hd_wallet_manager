@@ -8,7 +8,7 @@ class HDWalletManager {
         this.wallets = [];
         this.isInitialized = false;
         this.seedPhrase = '';
-        this.currentNetworkChainId = DEFAULT_NETWORK_CHAIN_ID;
+        // REMOVED: this.currentNetworkChainId - now using CURRENT_NETWORK.chainId directly
         
         // Initialize secure memory manager
         this.secureMemory = new SecureMemoryManager();
@@ -28,22 +28,50 @@ class HDWalletManager {
     }
 
     /**
+     * Get current chain ID (single source of truth)
+     */
+    get currentChainId() {
+        return CURRENT_NETWORK?.chainId || DEFAULT_NETWORK_CHAIN_ID;
+    }
+
+    /**
      * Switch network by chain ID
      */
     switchNetwork(chainId) {
+        console.log(`🔧 WalletManager.switchNetwork called with chainId: ${chainId}`);
+        console.log(`  Current chain ID before switch: ${this.currentChainId}`);
+        
         const network = this.getNetworkByChainId(chainId);
         if (!network) {
-            throw new Error(`Unknown network with chain ID: ${chainId}`);
+            const error = `Unknown network with chain ID: ${chainId}`;
+            console.error('❌', error);
+            throw new Error(error);
         }
         
-        const oldChainId = this.currentNetworkChainId;
-        this.currentNetworkChainId = chainId;
-        this.rpcUrl = NetworkUtils.getBestRpcUrl(network.rpc);
+        console.log(`  Found network: ${network.name} (Chain ID: ${network.chainId})`);
+        
+        const oldChainId = this.currentChainId;
+        
+        // **SINGLE SOURCE OF TRUTH: Update global network instead of local variable**
+        CURRENT_NETWORK = network;
+        
+        console.log(`  Updated chain ID: ${oldChainId} → ${this.currentChainId}`);
+        
+        // Handle both Network class instances and legacy network objects
+        if (typeof Network !== 'undefined' && network instanceof Network) {
+            this.rpcUrl = network.rpcUrl || NetworkUtils.getBestRpcUrl(network.getAllRpcUrls());
+        } else {
+            this.rpcUrl = NetworkUtils.getBestRpcUrl(network.rpc || network.getAllRpcUrls?.() || []);
+        }
+        
         this.usdtAddress = this.getUSDTAddressForNetwork();
         
         // Reset initialization status to force re-initialization with new network
         this.isInitialized = false;
         this.web3 = null;
+        
+        // Reset USDT validation flag to force re-validation on new network
+        this._usdtValidated = false;
         
         // Clear existing wallets since they're for the old network
         this.wallets = [];
@@ -68,7 +96,7 @@ class HDWalletManager {
      * Get current network information
      */
     getCurrentNetwork() {
-        return this.getNetworkByChainId(this.currentNetworkChainId);
+        return CURRENT_NETWORK || this.getNetworkByChainId(this.currentChainId);
     }
 
     /**
@@ -76,18 +104,62 @@ class HDWalletManager {
      */
     getUSDTAddressForNetwork() {
         const currentNetwork = this.getCurrentNetwork();
+        if (!currentNetwork) {
+            console.error('No current network found when getting USDT address');
+            return null;
+        }
+        
         const chainId = currentNetwork.chainId;
         
         // Get USDT address from COMMON_USDT_ADDRESSES based on chain ID
         const usdtAddress = NetworkUtils.getUSDTAddress(chainId);
         
+        console.log(`🔧 USDT Address Lookup:`);
+        console.log(`  Network: ${currentNetwork.name}`);
+        console.log(`  Chain ID: ${chainId}`);
+        console.log(`  USDT Address: ${usdtAddress || 'Not configured'}`);
+        
         if (usdtAddress) {
-            console.log(`USDT address for ${currentNetwork.name} (Chain ID: ${chainId}): ${usdtAddress}`);
+            console.log(`✅ USDT address for ${currentNetwork.name} (Chain ID: ${chainId}): ${usdtAddress}`);
         } else {
-            console.warn(`No USDT address configured for ${currentNetwork.name} (Chain ID: ${chainId})`);
+            console.warn(`⚠️ No USDT address configured for ${currentNetwork.name} (Chain ID: ${chainId})`);
         }
         
         return usdtAddress;
+    }
+
+    /**
+     * Force refresh all network settings (RPC URL, USDT address, etc.)
+     */
+    refreshNetworkSettings() {
+        const currentNetwork = this.getCurrentNetwork();
+        if (!currentNetwork) {
+            console.error('No current network found when refreshing network settings');
+            return false;
+        }
+        
+        const oldRpcUrl = this.rpcUrl;
+        const oldUsdtAddress = this.usdtAddress;
+        
+        // Refresh RPC URL
+        if (typeof Network !== 'undefined' && currentNetwork instanceof Network) {
+            this.rpcUrl = currentNetwork.rpcUrl || NetworkUtils.getBestRpcUrl(currentNetwork.getAllRpcUrls());
+        } else {
+            this.rpcUrl = NetworkUtils.getBestRpcUrl(currentNetwork.rpc || currentNetwork.getAllRpcUrls?.() || []);
+        }
+        
+        // Refresh USDT address directly from NetworkUtils
+        this.usdtAddress = NetworkUtils.getUSDTAddress(this.currentChainId);
+        
+        // Reset validation flag
+        this._usdtValidated = false;
+        
+        console.log(`🔧 Network Settings Refreshed:`);
+        console.log(`  Network: ${currentNetwork.name} (Chain ID: ${this.currentChainId})`);
+        console.log(`  RPC URL: ${oldRpcUrl} → ${this.rpcUrl}`);
+        console.log(`  USDT Address: ${oldUsdtAddress} → ${this.usdtAddress}`);
+        
+        return true;
     }
 
     /**
@@ -144,14 +216,19 @@ class HDWalletManager {
             // Get current network from chainlist
             const currentNetwork = this.getCurrentNetwork();
             if (!currentNetwork) {
-                throw new Error(`Network with chain ID ${this.currentNetworkChainId} not found. Please load networks first.`);
+                throw new Error(`Network with chain ID ${this.currentChainId} not found. Please load networks first.`);
             }
 
             // Use provided RPC URL or current network's RPC URL
             if (rpcUrl) {
                 this.rpcUrl = rpcUrl;
             } else {
-                this.rpcUrl = NetworkUtils.getBestRpcUrl(currentNetwork.rpc);
+                // Handle both Network class instances and legacy network objects
+                if (typeof Network !== 'undefined' && currentNetwork instanceof Network) {
+                    this.rpcUrl = currentNetwork.rpcUrl || NetworkUtils.getBestRpcUrl(currentNetwork.getAllRpcUrls());
+                } else {
+                    this.rpcUrl = NetworkUtils.getBestRpcUrl(currentNetwork.rpc || currentNetwork.getAllRpcUrls?.() || []);
+                }
             }
 
             // Update USDT address for current network
@@ -189,6 +266,8 @@ class HDWalletManager {
             if (!this.isInitialized) {
                 throw new Error('Wallet manager not initialized');
             }
+
+            // **SINGLE SOURCE OF TRUTH: No sync needed - always uses CURRENT_NETWORK.chainId**
 
             // Clear existing wallets
             this.wallets = [];
@@ -237,7 +316,8 @@ class HDWalletManager {
             
             // Only validate if we have a USDT address configured
             if (!this.usdtAddress || this.usdtAddress === '') {
-                console.warn(`No USDT address configured for ${this.getCurrentNetwork().name}`);
+                const currentNetwork = this.getCurrentNetwork();
+                console.warn(`No USDT address configured for ${currentNetwork ? currentNetwork.name : 'current network'}`);
                 return false;
             }
             
@@ -277,10 +357,24 @@ class HDWalletManager {
                 }
 
                 // Debug logging for network verification
-                console.log(`Checking balance for wallet ${walletIndex} on ${this.networks[this.currentNetwork].name}`);
+                const currentNetwork = this.getCurrentNetwork();
+                console.log(`Checking balance for wallet ${walletIndex} on ${currentNetwork ? currentNetwork.name : 'Unknown Network'}`);
+                
+                // **SINGLE SOURCE OF TRUTH: Always use CURRENT_NETWORK.chainId directly**
+                const currentChainId = this.currentChainId;
+                const freshUsdtAddress = NetworkUtils.getUSDTAddress(currentChainId);
+                
+                console.log(`🔧 USDT Address Direct Lookup:`);
+                console.log(`  Current Chain ID: ${currentChainId}`);
+                console.log(`  Old USDT Address: ${this.usdtAddress}`);
+                console.log(`  Fresh USDT Address: ${freshUsdtAddress}`);
+                
+                // Force update USDT address
+                this.usdtAddress = freshUsdtAddress;
+                
                 console.log(`Using RPC: ${this.rpcUrl}, USDT Address: ${this.usdtAddress}`);
 
-                // Validate USDT address before checking balances (only do this once per session)
+                // Validate USDT address before checking balances (only do this once per session per network)
                 if (!this._usdtValidated) {
                     await this.validateUSDTAddress();
                     this._usdtValidated = true;
@@ -297,7 +391,8 @@ class HDWalletManager {
                         // First verify the contract exists by checking if it has code
                         const contractCode = await this.web3.eth.getCode(this.usdtAddress);
                         if (contractCode === '0x') {
-                            console.warn(`USDT contract not found at ${this.usdtAddress} on ${this.getCurrentNetwork().name}`);
+                            const currentNetwork = this.getCurrentNetwork();
+                            console.warn(`USDT contract not found at ${this.usdtAddress} on ${currentNetwork ? currentNetwork.name : 'current network'}`);
                             usdtBalanceFormatted = 0; // Set to 0 if contract doesn't exist
                         } else {
                             const usdtContract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);
@@ -305,7 +400,8 @@ class HDWalletManager {
                             usdtBalanceFormatted = parseFloat(usdtBalance) / Math.pow(10, 6); // USDT has 6 decimals
                         }
                     } else {
-                        console.warn(`No USDT address configured for ${this.getCurrentNetwork().name}`);
+                        const currentNetwork = this.getCurrentNetwork();
+                        console.warn(`No USDT address configured for ${currentNetwork ? currentNetwork.name : 'current network'}`);
                         usdtBalanceFormatted = 0;
                     }
                 } catch (usdtError) {
@@ -489,13 +585,15 @@ class HDWalletManager {
                 }
             } else if (token === 'USDT') {
                 if (!this.usdtAddress || this.usdtAddress === '') {
-                    throw new Error(`USDT is not supported on ${this.getCurrentNetwork().name}`);
+                    const currentNetwork = this.getCurrentNetwork();
+                    throw new Error(`USDT is not supported on ${currentNetwork ? currentNetwork.name : 'current network'}`);
                 }
                 
                 // Check if USDT contract exists
                 const contractCode = await this.web3.eth.getCode(this.usdtAddress);
                 if (contractCode === '0x') {
-                    throw new Error(`USDT contract not found at ${this.usdtAddress} on ${this.getCurrentNetwork().name}`);
+                    const currentNetwork = this.getCurrentNetwork();
+                    throw new Error(`USDT contract not found at ${this.usdtAddress} on ${currentNetwork ? currentNetwork.name : 'current network'}`);
                 }
                 
                 const contract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);

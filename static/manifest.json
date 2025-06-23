@@ -11,13 +11,13 @@
   "lang": "en",
   "icons": [
     {
-      "src": "static/icons/favicon.svg",
+      "src": "icons/favicon.svg",
       "sizes": "32x32",
       "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "static/icons/apple-touch-icon.svg",
+      "src": "icons/apple-touch-icon.svg",
       "sizes": "180x180",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -26,13 +26,13 @@
   "categories": ["finance", "utilities", "productivity"],
   "screenshots": [
     {
-      "src": "static/screenshot-wide.png",
+      "src": "screenshot-wide.png",
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide"
     },
     {
-      "src": "static/screenshot-narrow.png",
+      "src": "screenshot-narrow.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow"

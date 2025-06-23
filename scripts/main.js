@@ -89,8 +89,16 @@ async function initializeWalletManager() {
             currentNetworkConfig = manager.getCurrentNetwork();
         }
         
+        // Debug network configuration
+        console.log('🔧 Wallet initialization network debug:');
+        console.log('Current network config:', currentNetworkConfig);
+        console.log('Current network name:', currentNetworkConfig?.name);
+        console.log('Current network chain ID:', currentNetworkConfig?.chainId);
+        console.log('Current network RPC URL:', currentNetworkConfig?.rpcUrl || currentNetworkConfig?.rpc?.[0]);
+        console.log('Wallet manager current chain ID:', walletManager.currentChainId);
+        
         // Initialize with current network using sanitized seed phrase
-        const result = await walletManager.initialize(validation.sanitized || seedPhrase, rpcUrl || currentNetworkConfig.rpcUrl);
+        const result = await walletManager.initialize(validation.sanitized || seedPhrase, rpcUrl || currentNetworkConfig.rpcUrl || currentNetworkConfig?.rpc?.[0]);
         
         if (result.success) {
             // Create multi-transceiver instance
@@ -126,6 +134,13 @@ async function generateWallets() {
             alert('Please initialize the wallet manager first');
             return;
         }
+        
+        // Debug current network state
+        console.log('🔧 Wallet generation network debug:');
+        console.log('Wallet manager current network:', walletManager.getCurrentNetwork()?.name);
+        console.log('Wallet manager chain ID:', walletManager.currentChainId);
+        console.log('Wallet manager RPC URL:', walletManager.rpcUrl);
+        console.log('Global current network:', CURRENT_NETWORK?.name);
         
         const startIndex = parseInt(document.getElementById('startIndex').value) || 0;
         const endIndex = parseInt(document.getElementById('endIndex').value) || 9;
@@ -176,6 +191,21 @@ async function checkBalances() {
             alert('Please generate wallets first');
             return;
         }
+        
+        // Debug current network state
+        console.log('🔧 Balance checking network debug:');
+        console.log('Wallet manager current network:', walletManager.getCurrentNetwork()?.name);
+        console.log('Wallet manager chain ID:', walletManager.currentChainId);
+        console.log('Wallet manager RPC URL:', walletManager.rpcUrl);
+        console.log('Wallet manager USDT address (before refresh):', walletManager.usdtAddress);
+        console.log('Global current network:', CURRENT_NETWORK?.name);
+        console.log('Global current network chain ID:', CURRENT_NETWORK?.chainId);
+        
+        // Test NetworkUtils.getUSDTAddress directly
+        console.log('🧪 Testing NetworkUtils.getUSDTAddress:');
+        console.log('  Chain ID 137 (Polygon):', NetworkUtils.getUSDTAddress(137));
+        console.log('  Chain ID 80002 (Amoy):', NetworkUtils.getUSDTAddress(80002));
+        console.log('  Current chain ID:', NetworkUtils.getUSDTAddress(walletManager.currentChainId));
         
         const totalWallets = walletManager.wallets.length;
         let completedWallets = 0;
