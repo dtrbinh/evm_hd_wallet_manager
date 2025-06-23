@@ -223,6 +223,9 @@
                                 <p class="github-description mb-0">
                                     Multi-Chain EVM HD Wallet Manager - Professional cryptocurrency wallet supporting 1000+ blockchain networks
                                 </p>
+                                <small class="text-muted" id="repoStatus" style="display: none;">
+                                    <i class="fas fa-info-circle me-1"></i>Repository is being set up
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -751,7 +754,7 @@
     <!-- Web3.js -->
     <script src="https://cdn.jsdelivr.net/npm/web3@4.2.0/dist/web3.min.js" crossorigin="anonymous"></script>
     <!-- Ethers.js for crypto utilities from cdnjs -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.14.4/ethers.umd.min.js" integrity="sha512-HoVzRwHBGvP/3lkDjkAKLRGP1wJNOdCLQNlIzlHqFr3lEKL1Kxj9cJRFJjCmYdV2iOFQOg7KVr5E+FE9JZJ8g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.14.4/ethers.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-ka7Sk0Gln4gmtz2MlQnikT1wXgYsOg+OMhuP+IlRH9sENBO0LRn5q+8nbTov4+1p" crossorigin="anonymous"></script>
     <!-- SheetJS for Excel export -->
@@ -769,26 +772,70 @@
     <script>
         // Function to fetch GitHub repository stats
         async function fetchGitHubStats() {
-            try {
-                const response = await fetch('https://api.github.com/repos/dtrbinh/evm_hd_wallet_manager');
-                if (response.ok) {
-                    const data = await response.json();
-                    const starCount = document.getElementById('starCount');
-                    if (starCount) {
-                        starCount.textContent = data.stargazers_count || '0';
+            const possibleRepos = [
+                'dtrbinh/evm_hd_wallet_manager',
+                'dtrbinh/evm-hd-wallet-manager',
+                'dtrbinh/ethereum_hd_wallet_manager',
+                'dtrbinh/ethereum-hd-wallet-manager'
+            ];
+            
+            for (const repo of possibleRepos) {
+                try {
+                    const response = await fetch(`https://api.github.com/repos/${repo}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        const starCount = document.getElementById('starCount');
+                        if (starCount) {
+                            starCount.textContent = data.stargazers_count || '0';
+                        }
+                        
+                        // Update star button title with current count
+                        const starButton = document.getElementById('starButton');
+                        if (starButton) {
+                            starButton.title = `Star this repository (${data.stargazers_count || 0} stars)`;
+                        }
+                        
+                        // Update GitHub links with the correct repository name
+                        updateGitHubLinks(repo);
+                        
+                        // Hide repo status message since repository was found
+                        const repoStatus = document.getElementById('repoStatus');
+                        if (repoStatus) {
+                            repoStatus.style.display = 'none';
+                        }
+                        
+                        return; // Success, exit the loop
                     }
-                    
-                    // Update star button title with current count
-                    const starButton = document.getElementById('starButton');
-                    if (starButton) {
-                        starButton.title = `Star this repository (${data.stargazers_count || 0} stars)`;
-                    }
-                } else {
-                    console.log('Could not fetch GitHub stats');
+                } catch (error) {
+                    console.log(`Error fetching stats for ${repo}:`, error);
                 }
-            } catch (error) {
-                console.log('Error fetching GitHub stats:', error);
             }
+            
+            // If no repository found, hide the star count or show a default
+            console.log('Repository not found. It may not exist yet or have a different name.');
+            const starCount = document.getElementById('starCount');
+            const repoStatus = document.getElementById('repoStatus');
+            
+            if (starCount) {
+                starCount.textContent = '0';
+                starCount.style.display = 'none';
+            }
+            
+            if (repoStatus) {
+                repoStatus.style.display = 'block';
+            }
+        }
+        
+        // Function to update GitHub links with the correct repository name
+        function updateGitHubLinks(repoName) {
+            const githubLinks = document.querySelectorAll('a[href*="github.com/dtrbinh/"]');
+            githubLinks.forEach(link => {
+                const href = link.getAttribute('href');
+                if (href.includes('evm_hd_wallet_manager') || href.includes('evm-hd-wallet-manager')) {
+                    const newHref = href.replace(/evm[_-]hd[_-]wallet[_-]manager/, repoName.split('/')[1]);
+                    link.setAttribute('href', `https://github.com/${repoName}`);
+                }
+            });
         }
         
         document.addEventListener('DOMContentLoaded', function() {
