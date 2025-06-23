@@ -1,246 +1,265 @@
 /**
  * Network Manager
- * Handles loading networks from chainlist.org and network switching functionality
+ * Handles network switching, searching, and management
  */
-
 class NetworkManager {
     constructor() {
         this.networks = [];
-        this.filteredNetworks = [];
         this.currentNetwork = CURRENT_NETWORK;
-        this.searchTimeout = null;
-        this.isLoading = false;
+        this.searchCache = new Map();
+        this.lastSearchTime = 0;
     }
 
     /**
-     * Initialize the network manager
+     * Initialize network manager
      */
     async init() {
         try {
-            // Small delay to ensure UI controller is loaded
-            if (typeof uiController === 'undefined') {
-                await new Promise(resolve => setTimeout(resolve, 100));
+            // Load networks from chainlist if not already loaded
+            if (AVAILABLE_NETWORKS.length === 0) {
+                console.log('Networks not loaded yet, loading from chainlist...');
+                await this.loadChainlistNetworks();
+            } else {
+                console.log(`Using ${AVAILABLE_NETWORKS.length} pre-loaded networks`);
+                this.networks = AVAILABLE_NETWORKS;
             }
-            
-            await this.loadChainlistNetworks();
-            this.updateCurrentNetworkDisplay();
-        } catch (error) {
-            console.warn('Failed to load chainlist networks, using legacy networks:', error);
+
+            // Set default current network if not set
+            if (!this.currentNetwork) {
+                this.currentNetwork = LEGACY_NETWORKS.mainnet;
+                this.updateCurrentNetworkDisplay();
+            }
+
+            // Set up legacy networks as fallback
             this.networks = Object.values(LEGACY_NETWORKS);
-            this.filteredNetworks = [...this.networks];
+            
+            // Set current network to mainnet by default
             this.currentNetwork = LEGACY_NETWORKS.mainnet;
             this.updateCurrentNetworkDisplay();
+
+            return { success: true, networksCount: this.networks.length };
+        } catch (error) {
+            console.error('Failed to initialize NetworkManager:', error);
+            return { success: false, error: error.message };
         }
     }
 
     /**
-     * Load networks from chainlist.org API
+     * Load networks from chainlist API
      */
     async loadChainlistNetworks() {
-        if (this.isLoading) return;
-        this.isLoading = true;
-
         try {
-            // Use uiController if available, otherwise console log
-            if (typeof uiController !== 'undefined' && uiController.showToast) {
-                uiController.showToast('Loading networks from chainlist.org...', 'info');
-            } else {
-                console.log('Loading networks from chainlist.org...');
-            }
-            
+            console.log('Loading networks from chainlist.org...');
             const response = await fetch(CHAINLIST_API_URL);
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const chainlistData = await response.json();
+            
+            if (!Array.isArray(chainlistData)) {
+                throw new Error('Invalid chainlist data format');
             }
 
-            const data = await response.json();
-            this.processChainlistData(data);
+            // Process and store networks
+            this.networks = this.processChainlistData(chainlistData);
             
-            if (typeof uiController !== 'undefined' && uiController.showToast) {
-                uiController.showToast(`Loaded ${this.networks.length} networks successfully!`, 'success');
-            } else {
-                console.log(`Loaded ${this.networks.length} networks successfully!`);
-            }
+            // Update global variables
+            AVAILABLE_NETWORKS = this.networks;
+            
+            console.log(`Loaded ${this.networks.length} networks from chainlist.org`);
+            return { success: true, count: this.networks.length };
+            
         } catch (error) {
-            console.error('Failed to load chainlist networks:', error);
-            if (typeof uiController !== 'undefined' && uiController.showToast) {
-                uiController.showToast('Failed to load network list. Using default networks.', 'warning');
-            } else {
-                console.warn('Failed to load network list. Using default networks.');
-            }
-            throw error;
-        } finally {
-            this.isLoading = false;
+            console.error('Failed to load networks from chainlist:', error);
+            
+            // Fallback to legacy networks
+            this.networks = Object.values(LEGACY_NETWORKS);
+            AVAILABLE_NETWORKS = this.networks;
+            
+            console.log('Using fallback legacy networks');
+            return { success: false, error: error.message, fallback: true };
         }
     }
 
     /**
-     * Process chainlist data and convert to our network format
+     * Process chainlist data and return formatted networks
      */
     processChainlistData(chainlistData) {
-        const networks = [];
+        console.log('Processing chainlist data into Network instances...');
         
-        chainlistData.forEach(network => {
-            // Skip networks without RPC endpoints
-            if (!network.rpc || network.rpc.length === 0) return;
-            
-            // Skip deprecated or disabled networks
-            if (network.status === 'deprecated' || network.status === 'disabled') return;
-
-            const processedNetwork = {
-                name: network.name,
-                chainId: network.chainId,
-                rpcUrl: NetworkUtils.getBestRpcUrl(network.rpc),
-                explorerUrl: network.explorers?.[0]?.url || '',
-                nativeCurrency: {
-                    symbol: network.nativeCurrency?.symbol || 'ETH',
-                    decimals: network.nativeCurrency?.decimals || 18
-                },
-                usdtAddress: NetworkUtils.getUSDTAddress(network.chainId),
-                type: NetworkUtils.isTestnet(network) ? 'testnet' : 'mainnet',
-                icon: NetworkUtils.getNetworkIcon(network),
-                chain: network.chain || 'UNKNOWN',
-                shortName: network.shortName || network.name,
-                infoURL: network.infoURL || '',
-                faucets: network.faucets || []
-            };
-
-            networks.push(processedNetwork);
-        });
-
-        // Sort networks by popularity (mainnet first, then by chain ID)
-        networks.sort((a, b) => {
-            if (a.type !== b.type) {
-                return a.type === 'mainnet' ? -1 : 1;
-            }
-            return a.chainId - b.chainId;
-        });
-
-        // Add legacy networks at the beginning for better UX
-        const legacyNetworks = Object.values(LEGACY_NETWORKS);
-        this.networks = [...legacyNetworks, ...networks.filter(n => 
-            !legacyNetworks.some(ln => ln.chainId === n.chainId)
-        )];
+        // Use the Network class to create instances from chainlist data
+        const networkInstances = Network.fromChainlistArray(chainlistData);
         
-        this.filteredNetworks = [...this.networks];
-        AVAILABLE_NETWORKS = [...this.networks];
-    }
-
-    /**
-     * Search networks based on query
-     */
-    searchNetworks(query, includeTestnets = true) {
-        if (!query.trim()) {
-            this.filteredNetworks = includeTestnets ? 
-                this.networks : 
-                this.networks.filter(n => n.type === 'mainnet');
-            return;
-        }
-
-        const searchTerm = query.toLowerCase();
-        this.filteredNetworks = this.networks.filter(network => {
-            const matchesSearch = 
-                (network.name && network.name.toLowerCase().includes(searchTerm)) ||
-                (network.chain && network.chain.toLowerCase().includes(searchTerm)) ||
-                (network.shortName && network.shortName.toLowerCase().includes(searchTerm)) ||
-                (network.chainId && network.chainId.toString().includes(searchTerm));
-
-            return matchesSearch && (includeTestnets || network.type === 'mainnet');
-        });
-    }
-
-    /**
-     * Get filtered networks (limited for UI performance)
-     */
-    getFilteredNetworks(limit = 20) {
-        return this.filteredNetworks.slice(0, limit);
-    }
-
-    /**
-     * Switch to a network by chain ID
-     */
-    async switchToNetwork(chainId) {
-        const network = this.networks.find(n => n.chainId === parseInt(chainId));
-        if (!network) {
-            if (typeof uiController !== 'undefined' && uiController.showToast) {
-                uiController.showToast(`Network with chain ID ${chainId} not found`, 'error');
-            } else {
-                console.error(`Network with chain ID ${chainId} not found`);
-            }
-            return false;
-        }
-
-        // Security validation for network switching
-        if (network.rpcUrl) {
-            const rpcValidation = NetworkSecurity.validateRpcUrl(network.rpcUrl);
-            if (!rpcValidation.valid) {
-                if (typeof uiController !== 'undefined' && uiController.showToast) {
-                    uiController.showToast(`Network security check failed: ${rpcValidation.error}`, 'error');
-                } else {
-                    console.error(`Network security check failed: ${rpcValidation.error}`);
-                }
+        // Filter out networks without valid RPC URLs
+        const validNetworks = networkInstances.filter(network => {
+            const validation = network.validate();
+            if (!validation.isValid) {
+                console.warn(`Invalid network ${network.name}:`, validation.errors);
                 return false;
             }
-            
-            if (rpcValidation.warning) {
-                const proceed = confirm(`Network Warning: ${rpcValidation.warning}\n\nDo you want to continue?`);
-                if (!proceed) {
-                    return false;
-                }
-            }
+            return true;
+        });
+        
+        console.log(`Processed ${validNetworks.length} valid networks from ${chainlistData.length} total`);
+        return validNetworks;
+    }
+
+    /**
+     * Search networks by name, chain, or chain ID (updated for Network class)
+     */
+    searchNetworks(query, includeTestnets = true) {
+        if (!query || query.length < 1) {
+            return this.getFilteredNetworks(20);
         }
 
+        const searchTerm = query.toLowerCase().trim();
+        const cacheKey = `${searchTerm}_${includeTestnets}`;
+        
+        // Return cached results if available and recent
+        if (this.searchCache.has(cacheKey) && Date.now() - this.lastSearchTime < 5000) {
+            return this.searchCache.get(cacheKey);
+        }
+
+        const results = this.networks.filter(network => {
+            // Use Network class properties for filtering
+            const isTestnet = network instanceof Network ? network.isTestnet : (network.type === 'testnet');
+            if (!includeTestnets && isTestnet) return false;
+            
+            return network.name.toLowerCase().includes(searchTerm) ||
+                   network.chain.toLowerCase().includes(searchTerm) ||
+                   network.chainId.toString().includes(searchTerm) ||
+                   network.shortName.toLowerCase().includes(searchTerm);
+        });
+
+        // Cache results
+        this.searchCache.set(cacheKey, results);
+        this.lastSearchTime = Date.now();
+
+        return results.slice(0, 50); // Limit results
+    }
+
+    /**
+     * Get filtered networks (popular networks first, updated for Network class)
+     */
+    getFilteredNetworks(limit = 20) {
+        const popularChainIds = [1, 137, 56, 43114, 250, 42161, 10, 8453]; // ETH, Polygon, BSC, Avalanche, Fantom, Arbitrum, Optimism, Base
+        const popular = this.networks.filter(n => popularChainIds.includes(n.chainId));
+        
+        // Use Network class properties for filtering
+        const others = this.networks.filter(n => {
+            const isMainnet = n instanceof Network ? n.isMainnet : (n.type === 'mainnet');
+            return !popularChainIds.includes(n.chainId) && isMainnet;
+        });
+        
+        return [...popular, ...others].slice(0, limit);
+    }
+
+    /**
+     * Switch to a network by chain ID (updated to work with Network class)
+     */
+    async switchToNetwork(chainId) {
         try {
+            let network = this.networks.find(n => n.chainId === chainId);
+            if (!network) {
+                // Try to find in AVAILABLE_NETWORKS if not in local networks
+                const globalNetwork = AVAILABLE_NETWORKS.find(n => n.chainId === chainId);
+                if (!globalNetwork) {
+                    throw new Error(`Network with chain ID ${chainId} not found`);
+                }
+                
+                // Add to local networks
+                this.networks.push(globalNetwork);
+                network = globalNetwork;
+            }
+
+            // Ensure we have a Network instance
+            if (!(network instanceof Network)) {
+                console.log('Converting legacy network to Network instance');
+                network = NetworkUtils.createNetworkFromLegacy(network);
+            }
+
+            console.log(`Switching to network: ${network.name} (Chain ID: ${chainId})`);
+
             if (typeof uiController !== 'undefined' && uiController.showToast) {
                 uiController.showToast(`Switching to ${network.name}...`, 'info');
-            } else {
-                console.log(`Switching to ${network.name}...`);
             }
             
-            // Update current network
+            // **CRITICAL FIX: Synchronize all network states**
             this.currentNetwork = network;
             CURRENT_NETWORK = network;
+            
+            // Update NETWORKS global object using Network class properties
+            if (network.isMainnet || network.type === 'mainnet') {
+                NETWORKS.mainnet = network;
+            } else {
+                NETWORKS.testnet = network;
+            }
+            
+            // **Synchronize WalletManager network state**
+            if (typeof walletManager !== 'undefined' && walletManager !== null) {
+                try {
+                    // Update wallet manager's network chain ID
+                    walletManager.currentNetworkChainId = chainId;
+                    
+                    // Clear existing wallets since they're for the old network
+                    walletManager.wallets = [];
+                    walletManager.isInitialized = false;
+                    walletManager.web3 = null;
+                    
+                    // Update RPC URL and USDT address using Network class methods
+                    walletManager.rpcUrl = network.rpcUrl || network.getAllRpcUrls()?.[0];
+                    walletManager.usdtAddress = network.usdtAddress || NetworkUtils.getUSDTAddress(chainId);
+                    
+                    console.log(`WalletManager synchronized to ${network.name}`);
+                } catch (walletError) {
+                    console.warn('Failed to synchronize WalletManager:', walletError);
+                }
+            }
             
             // Update UI
             this.updateCurrentNetworkDisplay();
             
-            // Clear existing wallets and balances if wallet manager is initialized
-            if (typeof walletManager !== 'undefined' && walletManager !== null && walletManager.wallets) {
-                walletManager.wallets = [];
+            // Clear existing wallet display
+            if (typeof uiController !== 'undefined' && uiController.clearDisplay) {
+                uiController.clearDisplay();
+            }
+            
+            // Show success message
+            const message = walletManager && walletManager.wallets && walletManager.wallets.length > 0 
+                ? `Switched to ${network.name}. Please re-initialize with your seed phrase.`
+                : `Switched to ${network.name}`;
                 
-                // Clear UI display
-                if (typeof uiController !== 'undefined' && uiController.clearDisplay) {
-                    uiController.clearDisplay();
-                }
-                
-                if (typeof uiController !== 'undefined' && uiController.showToast) {
-                    uiController.showToast(`Switched to ${network.name}. Please re-initialize with your seed phrase.`, 'info');
-                } else {
-                    console.log(`Switched to ${network.name}. Please re-initialize with your seed phrase.`);
-                }
-            } else {
-                // No wallet manager yet, just show success
-                if (typeof uiController !== 'undefined' && uiController.showToast) {
-                    uiController.showToast(`Switched to ${network.name}`, 'success');
-                } else {
-                    console.log(`Switched to ${network.name}`);
-                }
+            if (typeof uiController !== 'undefined' && uiController.showToast) {
+                uiController.showToast(message, 'success');
             }
             
             // Hide search results
             this.hideSearchResults();
             
+            console.log(`Successfully switched to ${network.name} (Chain ID: ${chainId})`);
+            console.log('Current network states synchronized:', {
+                networkManager: this.currentNetwork.name,
+                globalCurrent: CURRENT_NETWORK?.name,
+                walletManager: walletManager?.getCurrentNetwork()?.name
+            });
+            
             return true;
         } catch (error) {
             console.error('Failed to switch network:', error);
             if (typeof uiController !== 'undefined' && uiController.showToast) {
-                uiController.showToast(`Failed to switch to ${network.name}`, 'error');
-            } else {
-                console.error(`Failed to switch to ${network.name}`);
+                uiController.showToast(`Failed to switch network: ${error.message}`, 'error');
             }
             return false;
         }
+    }
+
+    /**
+     * Get current network (with fallback)
+     */
+    getCurrentNetwork() {
+        return this.currentNetwork || CURRENT_NETWORK || LEGACY_NETWORKS.mainnet;
     }
 
     /**
@@ -264,44 +283,72 @@ class NetworkManager {
     }
 
     /**
-     * Update the current network display in UI
+     * Update the current network display in UI (updated for Network class)
      */
     updateCurrentNetworkDisplay() {
+        const network = this.getCurrentNetwork();
+        
         const currentNetworkBadge = document.getElementById('currentNetwork');
         const currentRPC = document.getElementById('currentRPC');
         const currentChainId = document.getElementById('currentChainId');
         const currentCurrency = document.getElementById('currentCurrency');
 
-        if (currentNetworkBadge) {
-            const iconHtml = this.getIconHtml(this.currentNetwork.icon);
-            currentNetworkBadge.innerHTML = `${iconHtml}${this.currentNetwork.name}`;
-            currentNetworkBadge.className = `badge bg-${this.currentNetwork.type}`;
+        if (currentNetworkBadge && network) {
+            // Use Network class methods for better icon handling
+            let iconHtml;
+            if (network instanceof Network) {
+                iconHtml = this.getIconHtml(network.iconUrl || network.getFontAwesomeIcon());
+            } else {
+                iconHtml = this.getIconHtml(network.icon);
+            }
+            
+            currentNetworkBadge.innerHTML = `${iconHtml}${network.name}`;
+            
+            // Use Network class properties for badge styling
+            const badgeClass = network instanceof Network 
+                ? (network.isTestnet ? 'testnet' : 'mainnet')
+                : (network.type || 'mainnet');
+            currentNetworkBadge.className = `badge bg-${badgeClass}`;
         }
 
-        if (currentRPC) {
-            currentRPC.textContent = this.currentNetwork.rpcUrl;
+        if (currentRPC && network) {
+            // Use Network class methods for RPC URL
+            const rpcUrl = network instanceof Network 
+                ? (network.rpcUrl || network.getAllRpcUrls()?.[0] || 'Not available')
+                : (network.rpcUrl || network.rpc?.[0] || 'Not available');
+            currentRPC.textContent = rpcUrl;
         }
 
-        if (currentChainId) {
-            currentChainId.textContent = `Chain ID: ${this.currentNetwork.chainId}`;
+        if (currentChainId && network) {
+            currentChainId.textContent = `Chain ID: ${network.chainId}`;
         }
 
-        if (currentCurrency) {
-            currentCurrency.textContent = this.currentNetwork.nativeCurrency?.symbol || 'ETH';
+        if (currentCurrency && network) {
+            currentCurrency.textContent = network.nativeCurrency?.symbol || 'ETH';
         }
 
         // Update quick network buttons
         this.updateQuickNetworkButtons();
+        
+        // Update RPC URL field placeholder
+        if (typeof updateRpcUrlField === 'function') {
+            const networkType = network instanceof Network 
+                ? (network.isTestnet ? 'testnet' : 'mainnet')
+                : (network.type || 'mainnet');
+            updateRpcUrlField(networkType);
+        }
     }
 
     /**
      * Update quick network buttons active state
      */
     updateQuickNetworkButtons() {
+        const network = this.getCurrentNetwork();
         const quickButtons = document.querySelectorAll('.quick-network-buttons .btn');
+        
         quickButtons.forEach(btn => {
             const chainId = parseInt(btn.getAttribute('data-chain-id') || btn.getAttribute('onclick')?.match(/\d+/)?.[0]);
-            if (chainId === this.currentNetwork.chainId) {
+            if (chainId === network?.chainId) {
                 btn.classList.add('active');
             } else {
                 btn.classList.remove('active');
@@ -332,8 +379,10 @@ class NetworkManager {
                     </div>`;
                 }
                 
+                const isTestnet = network instanceof Network ? network.isTestnet : (network.type === 'testnet');
+                
                 return `
-                    <div class="network-search-result" onclick="networkManager.switchToNetwork(${network.chainId})">
+                    <div class="network-search-result" onclick="switchToQuickNetwork(${network.chainId})">
                         <div class="network-result-info">
                             ${iconHtml}
                             <div class="network-result-details">
@@ -341,7 +390,7 @@ class NetworkManager {
                                 <small>Chain ID: ${network.chainId} • ${network.nativeCurrency?.symbol || 'ETH'}</small>
                             </div>
                         </div>
-                        <div class="network-result-chain ${network.type === 'testnet' ? 'network-result-testnet' : ''}">
+                        <div class="network-result-chain ${isTestnet ? 'network-result-testnet' : ''}">
                             ${network.chain || 'Unknown'}
                         </div>
                     </div>
@@ -366,7 +415,7 @@ class NetworkManager {
      * Show network details modal
      */
     showNetworkDetails() {
-        const network = this.currentNetwork;
+        const network = this.getCurrentNetwork();
         const modal = document.createElement('div');
         modal.className = 'modal fade';
         modal.innerHTML = `
@@ -387,27 +436,40 @@ class NetworkManager {
                                     <tr><td><strong>Name:</strong></td><td>${network.name || 'Unknown'}</td></tr>
                                     <tr><td><strong>Chain ID:</strong></td><td>${network.chainId || 'Unknown'}</td></tr>
                                     <tr><td><strong>Type:</strong></td><td class="text-capitalize">${network.type || 'mainnet'}</td></tr>
-                                    <tr><td><strong>Native Currency:</strong></td><td>${network.nativeCurrency?.symbol || 'ETH'}</td></tr>
-                                    ${network.shortName ? `<tr><td><strong>Short Name:</strong></td><td>${network.shortName}</td></tr>` : ''}
+                                    <tr><td><strong>Currency:</strong></td><td>${network.nativeCurrency?.symbol || 'ETH'}</td></tr>
+                                    <tr><td><strong>Chain:</strong></td><td>${network.chain || 'Unknown'}</td></tr>
                                 </table>
                             </div>
                             <div class="col-md-6">
-                                <h6>Endpoints</h6>
+                                <h6>Connection Details</h6>
                                 <table class="table table-sm">
-                                    <tr><td><strong>RPC URL:</strong></td><td class="text-break">${network.rpcUrl}</td></tr>
-                                    ${network.explorerUrl ? `<tr><td><strong>Explorer:</strong></td><td><a href="${network.explorerUrl}" target="_blank" class="text-break">${network.explorerUrl}</a></td></tr>` : ''}
-                                    ${network.usdtAddress ? `<tr><td><strong>USDT Address:</strong></td><td class="text-break font-monospace">${network.usdtAddress}</td></tr>` : ''}
+                                    <tr><td><strong>RPC URL:</strong></td><td class="text-break">${network.rpcUrl || 'Not available'}</td></tr>
+                                    <tr><td><strong>USDT Address:</strong></td><td class="text-break">${network.usdtAddress || 'Not available'}</td></tr>
                                 </table>
-                                ${network.infoURL ? `<p><strong>More Info:</strong> <a href="${network.infoURL}" target="_blank">${network.infoURL}</a></p>` : ''}
+                                
+                                ${network.explorers && network.explorers.length > 0 ? `
+                                <h6>Block Explorers</h6>
+                                <ul class="list-unstyled">
+                                    ${network.explorers.map(explorer => `
+                                        <li><a href="${explorer.url}" target="_blank" rel="noopener">${explorer.name}</a></li>
+                                    `).join('')}
+                                </ul>
+                                ` : ''}
                             </div>
                         </div>
-                        ${network.faucets && network.faucets.length > 0 ? `
-                            <div class="mt-3">
-                                <h6>Faucets (for testnet):</h6>
-                                <ul class="list-unstyled">
-                                    ${network.faucets.map(faucet => `<li><a href="${faucet}" target="_blank">${faucet}</a></li>`).join('')}
-                                </ul>
+                        
+                        ${network.rpc && network.rpc.length > 1 ? `
+                        <div class="mt-3">
+                            <h6>Available RPC Endpoints</h6>
+                            <div class="list-group">
+                                ${network.rpc.slice(0, 5).map(rpc => `
+                                    <div class="list-group-item">
+                                        <small class="text-break">${typeof rpc === 'string' ? rpc : rpc.url || 'Invalid RPC'}</small>
+                                    </div>
+                                `).join('')}
+                                ${network.rpc.length > 5 ? `<small class="text-muted">... and ${network.rpc.length - 5} more</small>` : ''}
                             </div>
+                        </div>
                         ` : ''}
                     </div>
                     <div class="modal-footer">
@@ -416,88 +478,124 @@ class NetworkManager {
                 </div>
             </div>
         `;
-
+        
         document.body.appendChild(modal);
-        const bsModal = new bootstrap.Modal(modal);
-        bsModal.show();
-
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        // Clean up modal after it's hidden
         modal.addEventListener('hidden.bs.modal', () => {
             document.body.removeChild(modal);
         });
     }
 }
 
-// Initialize network manager
-const networkManager = new NetworkManager();
+// Global network manager instance
+let networkManager = null;
 
-// Global functions for HTML event handlers
+// NetworkManager will be initialized in main.js
+// This ensures proper coordination with the Network class and constants loading
+
+// Global functions for UI interaction
 function searchNetworks() {
-    const query = document.getElementById('networkSearchInput').value;
-    const includeTestnets = document.getElementById('includeTestnets').checked;
+    const searchInput = document.getElementById('networkSearchInput');
+    const includeTestnets = document.getElementById('includeTestnets')?.checked || false;
     
-    // Clear previous timeout
-    if (networkManager.searchTimeout) {
-        clearTimeout(networkManager.searchTimeout);
+    if (!searchInput) {
+        console.warn('Search input not found');
+        return;
     }
     
-    // Debounce search
-    networkManager.searchTimeout = setTimeout(() => {
-        networkManager.searchNetworks(query, includeTestnets);
-        const results = networkManager.getFilteredNetworks();
-        
-        if (query.trim()) {
-            networkManager.showSearchResults(results);
-        } else {
-            networkManager.hideSearchResults();
+    // Try to get networkManager from different sources
+    const manager = networkManager || window.networkManager;
+    
+    if (!manager) {
+        console.warn('Network manager not found or not initialized yet');
+        return;
+    }
+    
+    const query = searchInput.value.trim();
+    
+    if (query.length === 0) {
+        manager.hideSearchResults();
+        return;
+    }
+    
+    console.log('Searching networks with query:', query, 'includeTestnets:', includeTestnets);
+    console.log('NetworkManager has', manager.networks ? manager.networks.length : 0, 'networks loaded');
+    
+    const results = manager.searchNetworks(query, includeTestnets);
+    console.log('Search results:', results.length, 'networks found');
+    
+    if (results.length === 0) {
+        console.log('No networks found. Available networks:', manager.networks?.slice(0, 5).map(n => n.name));
+    }
+    
+    manager.showSearchResults(results);
+}
+
+// Load chainlist networks function
+async function loadChainlistNetworks() {
+    const manager = networkManager || window.networkManager;
+    
+    if (!manager) {
+        console.error('NetworkManager not initialized');
+        return;
+    }
+    
+    const result = await manager.loadChainlistNetworks();
+    
+    if (result.success) {
+        console.log(`Loaded ${result.count} networks from chainlist`);
+        if (typeof uiController !== 'undefined' && uiController.showToast) {
+            uiController.showToast(`Loaded ${result.count} networks`, 'success');
         }
-    }, 300);
+    } else {
+        console.error('Failed to load networks:', result.error);
+        if (typeof uiController !== 'undefined' && uiController.showToast) {
+            uiController.showToast('Failed to load networks', 'error');
+        }
+    }
 }
 
-function loadChainlistNetworks() {
-    const btn = document.getElementById('refreshNetworksBtn');
-    const icon = btn.querySelector('i');
-    
-    icon.className = 'fas fa-spinner fa-spin';
-    btn.disabled = true;
-    
-    networkManager.loadChainlistNetworks()
-        .finally(() => {
-            icon.className = 'fas fa-sync-alt';
-            btn.disabled = false;
-        });
-}
-
+// Switch to quick network
 function switchToQuickNetwork(chainId) {
-    networkManager.switchToNetwork(chainId);
+    const manager = networkManager || window.networkManager;
+    
+    if (manager) {
+        console.log('Switching to network with chain ID:', chainId);
+        manager.switchToNetwork(chainId);
+    } else {
+        console.warn('NetworkManager not available for network switch');
+    }
 }
 
+// Show network details
 function showNetworkDetails() {
-    networkManager.showNetworkDetails();
+    const manager = networkManager || window.networkManager;
+    
+    if (manager) {
+        manager.showNetworkDetails();
+    } else {
+        console.warn('NetworkManager not available for showing network details');
+    }
 }
 
-// Hide search results when clicking outside
-document.addEventListener('click', (e) => {
+// Hide search results on click outside
+document.addEventListener('click', function(event) {
     const searchContainer = document.querySelector('.network-search-section');
-    if (searchContainer && !searchContainer.contains(e.target)) {
-        networkManager.hideSearchResults();
-    }
-});
-
-// Prevent hiding when clicking inside search results
-document.addEventListener('click', (e) => {
-    if (e.target.closest('#networkSearchResults')) {
-        e.stopPropagation();
-    }
-});
-
-// Clear search input shortcut
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        const searchInput = document.getElementById('networkSearchInput');
-        if (searchInput && document.activeElement === searchInput) {
-            searchInput.value = '';
-            searchNetworks();
+    if (searchContainer && !searchContainer.contains(event.target)) {
+        const manager = networkManager || window.networkManager;
+        if (manager) {
+            manager.hideSearchResults();
         }
+    }
+});
+
+// Handle include testnets toggle
+document.addEventListener('change', function(event) {
+    if (event.target.id === 'includeTestnets') {
+        searchNetworks(); // Re-run search with new filter
     }
 });
 

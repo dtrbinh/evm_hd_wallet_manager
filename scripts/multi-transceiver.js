@@ -11,9 +11,26 @@ class MultiTransceiver {
     /**
      * Estimate gas fees for multi-transaction
      */
-    async estimateMultiTransactionGas(mode, token, transactionCount, amount) {
+    async estimateMultiTransactionGas(mode, token, transactionCount, amount, gasConfig = null) {
         try {
-            return await this.walletManager.estimateGas(token, transactionCount);
+            if (gasConfig) {
+                // Calculate gas fee using custom configuration
+                const gasPrice = gasConfig.gasPrice; // Already in Gwei
+                const gasLimit = gasConfig.gasLimit;
+                const gasFeePerTx = (gasPrice * gasLimit) / 1e9; // Convert to POL
+                const totalGasFee = gasFeePerTx * transactionCount;
+                
+                return {
+                    gasPrice: gasPrice,
+                    gasLimit: gasLimit,
+                    gasFeePerTransaction: gasFeePerTx,
+                    totalGasFee: totalGasFee,
+                    transactionCount: transactionCount
+                };
+            } else {
+                // Use default estimation
+                return await this.walletManager.estimateGas(token, transactionCount);
+            }
         } catch (error) {
             console.error('Error estimating multi-transaction gas:', error);
             throw error;
@@ -82,7 +99,7 @@ class MultiTransceiver {
      * Execute multi-transaction (multi-send or multi-receive)
      */
     async executeMultiTransaction(params) {
-        const { mode, token, senderWallet, receiverWallet, selectedWallets, selectedReceivers, amount } = params;
+        const { mode, token, senderWallet, receiverWallet, selectedWallets, selectedReceivers, amount, gasConfig } = params;
         
         // Enhanced security validation
         const validation = this.validateTransactionParams(params);
@@ -191,7 +208,8 @@ class MultiTransceiver {
                         sender.index, 
                         receiverAddress, 
                         amount, 
-                        token
+                        token,
+                        gasConfig
                     );
                     
                     const transaction = {
@@ -270,7 +288,8 @@ class MultiTransceiver {
                         sender.index, 
                         receiver.address, 
                         amount, 
-                        token
+                        token,
+                        gasConfig
                     );
                     
                     const transaction = {

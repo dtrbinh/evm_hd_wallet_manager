@@ -26,25 +26,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('Progress:', message);
     };
     
-    // Initialize network manager
-    try {
-        await networkManager.init();
-        console.log('Network manager initialized successfully');
-    } catch (error) {
-        console.warn('Failed to initialize network manager:', error);
-        // Fall back to legacy networks
-        networkManager.networks = Object.values(LEGACY_NETWORKS);
-        networkManager.filteredNetworks = [...networkManager.networks];
-        networkManager.currentNetwork = LEGACY_NETWORKS.mainnet;
-        CURRENT_NETWORK = networkManager.currentNetwork;
-        
-        // Use a small delay to ensure DOM elements are ready
-        setTimeout(() => {
-            networkManager.updateCurrentNetworkDisplay();
-        }, 100);
-        
-        console.log('Using legacy networks as fallback');
-    }
+    // Network manager will be initialized after constants are loaded
+    console.log('Main application initialization completed');
     
     console.log('Application initialized successfully');
 });
@@ -90,13 +73,21 @@ async function initializeWalletManager() {
         // Create wallet manager instance
         walletManager = new HDWalletManager();
         
-        // Initialize network manager first
-        if (!networkManager.networks.length) {
-            await networkManager.init();
-        }
+        // Get current network configuration
+        const manager = networkManager || window.networkManager;
+        let currentNetworkConfig = CURRENT_NETWORK;
         
-        // Use current network from network manager
-        const currentNetworkConfig = networkManager.currentNetwork;
+        // Initialize network manager if available and needed
+        if (manager && (!manager.networks || !manager.networks.length)) {
+            try {
+                await manager.init();
+                currentNetworkConfig = manager.getCurrentNetwork();
+            } catch (error) {
+                console.warn('NetworkManager initialization failed, using global current network:', error);
+            }
+        } else if (manager) {
+            currentNetworkConfig = manager.getCurrentNetwork();
+        }
         
         // Initialize with current network using sanitized seed phrase
         const result = await walletManager.initialize(validation.sanitized || seedPhrase, rpcUrl || currentNetworkConfig.rpcUrl);
@@ -106,7 +97,9 @@ async function initializeWalletManager() {
             multiTransceiver = new MultiTransceiver(walletManager);
             
             // Update network display to reflect the correct network
-            networkManager.updateCurrentNetworkDisplay();
+            if (manager && manager.updateCurrentNetworkDisplay) {
+                manager.updateCurrentNetworkDisplay();
+            }
             
             uiController.updateFullscreenLoading('Wallet Manager Initialized!', `Ready to generate wallets on ${result.network.name}`, 100);
             uiController.showStepControls();
@@ -299,6 +292,9 @@ async function openMultiTransceiver() {
         // Initialize custom receivers UI
         updateCustomReceiversUI();
         
+        // Initialize gas fee UI
+        initializeGasFeeUI();
+        
         // Add Enter key listener for custom receiver inputs
         const addressInput = document.getElementById('customReceiverAddress');
         const labelInput = document.getElementById('customReceiverLabel');
@@ -373,11 +369,16 @@ async function calculateGasFees() {
         document.getElementById('estimatedGasFee').textContent = 'Calculating...';
         
         const transactionCount = mode === 'multi-send' ? selectedReceivers.length : selectedWallets.length;
+        
+        // Get current gas configuration
+        const gasConfig = getCurrentGasConfig();
+        
         const gasEstimate = await multiTransceiver.estimateMultiTransactionGas(
             mode, 
             token, 
             transactionCount, 
-            amount
+            amount,
+            gasConfig
         );
         
         const gasFee = gasEstimate.totalGasFee;
@@ -404,6 +405,9 @@ async function executeMultiTransaction() {
         const token = mode === 'multi-send' ? 
             document.getElementById('tokenToSend').value : 
             document.getElementById('tokenToReceive').value;
+        
+        // Get current gas configuration first
+        const gasConfig = getCurrentGasConfig();
         
         let selectedWallets = [];
         let selectedReceivers = [];
@@ -432,7 +436,8 @@ async function executeMultiTransaction() {
             receiverWallet,
             selectedWallets,
             selectedReceivers: mode === 'multi-send' ? selectedReceivers : undefined,
-            amount
+            amount,
+            gasConfig
         };
         
         const validation = multiTransceiver.validateTransactionParams(params);
@@ -451,7 +456,8 @@ async function executeMultiTransaction() {
                 walletManager.getWallet(receiverWallet)?.address,
             amount: amount,
             token: token,
-            network: walletManager.getCurrentNetwork().name
+            network: walletManager.getCurrentNetwork().name,
+            gasConfig: gasConfig
         };
         
         const confirmResult = await TransactionSecurity.confirmTransaction(sampleTransaction);
@@ -637,8 +643,24 @@ async function toggleNetwork() {
  */
 function updateRpcUrlField(targetNetwork) {
     const rpcUrlInput = document.getElementById('rpcUrl');
-    if (rpcUrlInput && networkManager.currentNetwork) {
-        rpcUrlInput.placeholder = networkManager.currentNetwork.rpcUrl;
+    if (!rpcUrlInput) return;
+    
+    // Try to get network manager from different sources
+    const manager = networkManager || window.networkManager;
+    let currentNetwork = null;
+    
+    if (manager && manager.currentNetwork) {
+        currentNetwork = manager.currentNetwork;
+    } else if (CURRENT_NETWORK) {
+        currentNetwork = CURRENT_NETWORK;
+    } else if (targetNetwork && LEGACY_NETWORKS[targetNetwork]) {
+        currentNetwork = LEGACY_NETWORKS[targetNetwork];
+    }
+    
+    if (currentNetwork) {
+        const rpcUrl = currentNetwork.rpcUrl || currentNetwork.getAllRpcUrls?.()?.[0] || '';
+        rpcUrlInput.placeholder = rpcUrl;
+        
         // Only update the value if it's empty or contains a default network URL
         const currentValue = rpcUrlInput.value.trim();
         if (!currentValue || 
@@ -878,6 +900,223 @@ function toggleSeedPhraseVisibility() {
     }
 }
 
+/**
+ * Initialize Gas Fee UI
+ */
+function initializeGasFeeUI() {
+    try {
+        // Load current network gas price
+        loadCurrentNetworkGasPrice();
+        
+        // Setup event listeners for gas mode toggle
+        const gasModeRadios = document.querySelectorAll('input[name="gasMode"]');
+        gasModeRadios.forEach(radio => {
+            radio.addEventListener('change', handleGasModeChange);
+        });
+        
+        // Setup event listeners for gas settings changes
+        const gasInputs = [
+            'gasSpeedPreset', 'gasPriceMultiplier', 'customGasPrice', 
+            'customGasLimit', 'customPriorityFee'
+        ];
+        
+        gasInputs.forEach(inputId => {
+            const element = document.getElementById(inputId);
+            if (element) {
+                element.addEventListener('input', updateGasPreview);
+                element.addEventListener('change', updateGasPreview);
+            }
+        });
+        
+        // Initial gas preview update
+        updateGasPreview();
+        
+    } catch (error) {
+        console.error('Error initializing gas fee UI:', error);
+    }
+}
+
+/**
+ * Handle gas mode change (Auto/Custom)
+ */
+function handleGasModeChange() {
+    const gasMode = document.querySelector('input[name="gasMode"]:checked').value;
+    const autoSection = document.getElementById('autoGasSection');
+    const customSection = document.getElementById('customGasSection');
+    const gasModeDisplay = document.getElementById('gasModeDisplay');
+    
+    if (gasMode === 'auto') {
+        autoSection.style.display = 'block';
+        customSection.style.display = 'none';
+        gasModeDisplay.textContent = 'Auto';
+    } else {
+        autoSection.style.display = 'none';
+        customSection.style.display = 'block';
+        gasModeDisplay.textContent = 'Custom';
+        
+        // Load network estimates when switching to custom mode
+        loadNetworkGasEstimates();
+    }
+    
+    updateGasPreview();
+}
+
+/**
+ * Load current network gas price
+ */
+async function loadCurrentNetworkGasPrice() {
+    try {
+        if (!walletManager || !walletManager.web3) {
+            document.getElementById('networkGasPrice').textContent = 'Not connected';
+            return;
+        }
+        
+        const gasPrice = await walletManager.web3.eth.getGasPrice();
+        const gasPriceGwei = parseFloat(walletManager.web3.utils.fromWei(gasPrice, 'gwei'));
+        
+        document.getElementById('networkGasPrice').textContent = gasPriceGwei.toFixed(1);
+        
+        // Update gas preview
+        updateGasPreview();
+        
+    } catch (error) {
+        console.error('Error loading network gas price:', error);
+        document.getElementById('networkGasPrice').textContent = 'Error';
+    }
+}
+
+/**
+ * Load network gas estimates for custom mode
+ */
+async function loadNetworkGasEstimates() {
+    try {
+        if (!walletManager || !walletManager.web3) {
+            uiController.showToast('Wallet not connected', 'warning');
+            return;
+        }
+        
+        // Get current network gas price
+        const gasPrice = await walletManager.web3.eth.getGasPrice();
+        const gasPriceGwei = parseFloat(walletManager.web3.utils.fromWei(gasPrice, 'gwei'));
+        
+        // Set recommended values
+        document.getElementById('customGasPrice').value = gasPriceGwei.toFixed(1);
+        document.getElementById('customGasLimit').value = '21000'; // Default for POL
+        document.getElementById('customPriorityFee').value = '2.0'; // Standard tip
+        
+        updateGasPreview();
+        
+        uiController.showToast('Network gas estimates loaded', 'success');
+        
+    } catch (error) {
+        console.error('Error loading network gas estimates:', error);
+        uiController.showToast('Failed to load gas estimates: ' + error.message, 'error');
+    }
+}
+
+/**
+ * Update gas preview and display
+ */
+function updateGasPreview() {
+    try {
+        const gasMode = document.querySelector('input[name="gasMode"]:checked').value;
+        let gasPrice, gasLimit;
+        
+        if (gasMode === 'auto') {
+            // Auto mode calculations
+            const networkGasText = document.getElementById('networkGasPrice').textContent;
+            const networkGas = parseFloat(networkGasText) || 20; // Default fallback
+            
+            const speedPreset = document.getElementById('gasSpeedPreset').value;
+            const multiplier = parseFloat(document.getElementById('gasPriceMultiplier').value) || 1.2;
+            
+            // Apply speed preset multipliers
+            let speedMultiplier = 1.0;
+            switch (speedPreset) {
+                case 'slow':
+                    speedMultiplier = 0.8;
+                    break;
+                case 'standard':
+                    speedMultiplier = 1.0;
+                    break;
+                case 'fast':
+                    speedMultiplier = 1.5;
+                    break;
+            }
+            
+            gasPrice = networkGas * multiplier * speedMultiplier;
+            gasLimit = 21000; // Default for POL transfers
+            
+        } else {
+            // Custom mode values
+            gasPrice = parseFloat(document.getElementById('customGasPrice').value) || 20;
+            gasLimit = parseInt(document.getElementById('customGasLimit').value) || 21000;
+        }
+        
+        // Update display
+        document.getElementById('effectiveGasPrice').textContent = gasPrice.toFixed(1);
+        document.getElementById('effectiveGasLimit').textContent = gasLimit.toLocaleString();
+        
+        // Calculate cost per transaction
+        const costPerTx = (gasPrice * gasLimit) / 1e9; // Convert from Gwei to POL
+        
+        if (gasMode === 'custom') {
+            document.getElementById('customGasCostPreview').textContent = costPerTx.toFixed(6);
+        }
+        
+        // Reset gas fee calculation if values changed
+        document.getElementById('estimatedGasFee').textContent = 'Click Calculate Gas';
+        document.getElementById('executeTransactionBtn').disabled = true;
+        
+    } catch (error) {
+        console.error('Error updating gas preview:', error);
+    }
+}
+
+/**
+ * Get current gas configuration for transactions
+ */
+function getCurrentGasConfig() {
+    const gasMode = document.querySelector('input[name="gasMode"]:checked').value;
+    
+    if (gasMode === 'auto') {
+        const networkGasText = document.getElementById('networkGasPrice').textContent;
+        const networkGas = parseFloat(networkGasText) || 20;
+        
+        const speedPreset = document.getElementById('gasSpeedPreset').value;
+        const multiplier = parseFloat(document.getElementById('gasPriceMultiplier').value) || 1.2;
+        
+        let speedMultiplier = 1.0;
+        switch (speedPreset) {
+            case 'slow':
+                speedMultiplier = 0.8;
+                break;
+            case 'standard':
+                speedMultiplier = 1.0;
+                break;
+            case 'fast':
+                speedMultiplier = 1.5;
+                break;
+        }
+        
+        return {
+            mode: 'auto',
+            gasPrice: networkGas * multiplier * speedMultiplier,
+            gasLimit: 21000, // Will be adjusted based on token type
+            priorityFee: 2.0 // Standard tip
+        };
+    } else {
+        return {
+            mode: 'custom',
+            gasPrice: parseFloat(document.getElementById('customGasPrice').value) || 20,
+            gasLimit: parseInt(document.getElementById('customGasLimit').value) || 21000,
+            priorityFee: parseFloat(document.getElementById('customPriorityFee').value) || 2.0
+        };
+    }
+}
+
+
+
 // Global error handler
 window.addEventListener('error', function(e) {
     // Skip null errors and minor script errors
@@ -904,4 +1143,99 @@ window.addEventListener('unhandledrejection', function(e) {
     }
 });
 
-console.log('Main script loaded successfully'); 
+console.log('Main script loaded successfully');
+
+// Initialize application when DOM is loaded
+document.addEventListener('DOMContentLoaded', async function() {
+    try {
+        // Initialize network configuration
+        console.log('Initializing EVM HD Wallet Manager...');
+        
+        // Load networks from chainlist.org API using the new Network class
+        const networkResult = await NetworkUtils.loadNetworksFromChainlist();
+        
+        if (networkResult.success) {
+            console.log(`Successfully loaded ${networkResult.count} networks from chainlist.org`);
+            console.log('Default network set to:', CURRENT_NETWORK.name, '(Chain ID:', CURRENT_NETWORK.chainId, ')');
+            
+            // Verify Polygon Mainnet is the default
+            if (CURRENT_NETWORK.chainId === 137) {
+                console.log('✓ Polygon Mainnet correctly set as default network');
+            } else {
+                console.warn('⚠ Default network is not Polygon Mainnet, current:', CURRENT_NETWORK.name);
+            }
+            
+            if (typeof uiController !== 'undefined' && uiController) {
+                uiController.showToast(`Loaded ${networkResult.count} networks. Default: ${CURRENT_NETWORK.name}`, 'success');
+            }
+        } else if (networkResult.fallback) {
+            console.log('Using fallback networks due to API failure');
+            console.log('Fallback default network:', CURRENT_NETWORK.name, '(Chain ID:', CURRENT_NETWORK.chainId, ')');
+            
+            if (typeof uiController !== 'undefined' && uiController) {
+                uiController.showToast(`Using fallback networks. Default: ${CURRENT_NETWORK.name}`, 'warning');
+            }
+        } else {
+            throw new Error(networkResult.error || 'Failed to load networks');
+        }
+        
+        // Initialize NetworkManager if available
+        if (typeof NetworkManager !== 'undefined') {
+            try {
+                console.log('Creating NetworkManager instance...');
+                window.networkManager = new NetworkManager();
+                
+                // Also set the global networkManager variable for backward compatibility
+                if (typeof networkManager !== 'undefined') {
+                    networkManager = window.networkManager;
+                }
+                
+                const result = await window.networkManager.init();
+                
+                if (result.success) {
+                    console.log(`NetworkManager initialized successfully with ${result.networksCount} networks`);
+                    console.log('NetworkManager is ready for search operations');
+                    
+                    // Ensure Polygon Mainnet is active
+                    const currentNetwork = window.networkManager.getCurrentNetwork();
+                    if (currentNetwork && currentNetwork.chainId !== 137) {
+                        console.log('Switching to Polygon Mainnet as default...');
+                        await window.networkManager.switchToNetwork(137);
+                    }
+                } else {
+                    console.error('NetworkManager initialization failed:', result.error);
+                }
+            } catch (nmError) {
+                console.error('NetworkManager initialization failed:', nmError);
+            }
+        } else {
+            console.warn('NetworkManager class not available');
+        }
+        
+        console.log('EVM HD Wallet Manager initialized successfully');
+        
+        // Show success message
+        if (typeof uiController !== 'undefined' && uiController) {
+            uiController.showToast('Application initialized successfully', 'success');
+        }
+        
+    } catch (error) {
+        console.error('Failed to initialize application:', error);
+        
+        // Show error message to user
+        if (typeof uiController !== 'undefined' && uiController) {
+            uiController.showToast('Failed to initialize application: ' + error.message, 'error');
+        }
+        
+        // Try to continue with legacy networks as last resort
+        try {
+            console.log('Attempting to use legacy networks as fallback...');
+            if (typeof LEGACY_NETWORKS !== 'undefined') {
+                CURRENT_NETWORK = LEGACY_NETWORKS.mainnet;
+                console.log('Using legacy networks as final fallback');
+            }
+        } catch (fallbackError) {
+            console.error('Even legacy fallback failed:', fallbackError);
+        }
+    }
+}); 

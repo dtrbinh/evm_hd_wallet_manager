@@ -8,7 +8,7 @@ class HDWalletManager {
         this.wallets = [];
         this.isInitialized = false;
         this.seedPhrase = '';
-        this.currentNetwork = DEFAULT_NETWORK;
+        this.currentNetworkChainId = DEFAULT_NETWORK_CHAIN_ID;
         
         // Initialize secure memory manager
         this.secureMemory = new SecureMemoryManager();
@@ -16,9 +16,9 @@ class HDWalletManager {
         // Use centralized network configurations
         this.networks = NETWORKS;
         
-        // Current network config
-        this.rpcUrl = this.networks[this.currentNetwork].rpcUrl;
-        this.usdtAddress = this.networks[this.currentNetwork].usdtAddress;
+        // Current network config (will be set after networks are loaded)
+        this.rpcUrl = null;
+        this.usdtAddress = null;
         
         // Use centralized ERC20 ABI
         this.erc20Abi = ERC20_ABI;
@@ -28,17 +28,18 @@ class HDWalletManager {
     }
 
     /**
-     * Switch between mainnet and testnet
+     * Switch network by chain ID
      */
-    switchNetwork(network) {
-        if (!this.networks[network]) {
-            throw new Error(`Unknown network: ${network}`);
+    switchNetwork(chainId) {
+        const network = this.getNetworkByChainId(chainId);
+        if (!network) {
+            throw new Error(`Unknown network with chain ID: ${chainId}`);
         }
         
-        const oldNetwork = this.currentNetwork;
-        this.currentNetwork = network;
-        this.rpcUrl = this.networks[network].rpcUrl;
-        this.usdtAddress = this.networks[network].usdtAddress;
+        const oldChainId = this.currentNetworkChainId;
+        this.currentNetworkChainId = chainId;
+        this.rpcUrl = NetworkUtils.getBestRpcUrl(network.rpc);
+        this.usdtAddress = this.getUSDTAddressForNetwork();
         
         // Reset initialization status to force re-initialization with new network
         this.isInitialized = false;
@@ -47,20 +48,46 @@ class HDWalletManager {
         // Clear existing wallets since they're for the old network
         this.wallets = [];
         
-        console.log(`Switched from ${this.networks[oldNetwork].name} to ${this.networks[network].name}`);
+        console.log(`Switched from chain ID ${oldChainId} to ${network.name} (${chainId})`);
         
         return {
             success: true,
-            network: this.networks[network],
-            message: `Switched to ${this.networks[network].name}`
+            network: network,
+            message: `Switched to ${network.name}`
         };
+    }
+
+    /**
+     * Get network by chain ID
+     */
+    getNetworkByChainId(chainId) {
+        return AVAILABLE_NETWORKS.find(network => network.chainId === chainId);
     }
 
     /**
      * Get current network information
      */
     getCurrentNetwork() {
-        return this.networks[this.currentNetwork];
+        return this.getNetworkByChainId(this.currentNetworkChainId);
+    }
+
+    /**
+     * Get USDT address for current network based on chain ID
+     */
+    getUSDTAddressForNetwork() {
+        const currentNetwork = this.getCurrentNetwork();
+        const chainId = currentNetwork.chainId;
+        
+        // Get USDT address from COMMON_USDT_ADDRESSES based on chain ID
+        const usdtAddress = NetworkUtils.getUSDTAddress(chainId);
+        
+        if (usdtAddress) {
+            console.log(`USDT address for ${currentNetwork.name} (Chain ID: ${chainId}): ${usdtAddress}`);
+        } else {
+            console.warn(`No USDT address configured for ${currentNetwork.name} (Chain ID: ${chainId})`);
+        }
+        
+        return usdtAddress;
     }
 
     /**
@@ -77,11 +104,12 @@ class HDWalletManager {
             
             // Test connection
             const blockNumber = await this.web3.eth.getBlockNumber();
-            console.log(`Refreshed connection to ${this.networks[this.currentNetwork].name} - Block: ${blockNumber}`);
+            const currentNetwork = this.getCurrentNetwork();
+            console.log(`Refreshed connection to ${currentNetwork.name} - Block: ${blockNumber}`);
             
             return {
                 success: true,
-                message: `Connection refreshed to ${this.networks[this.currentNetwork].name}`,
+                message: `Connection refreshed to ${currentNetwork.name}`,
                 blockNumber: blockNumber
             };
         } catch (error) {
@@ -113,25 +141,36 @@ class HDWalletManager {
             // Store seed phrase securely
             this.secureMemory.storeSensitiveData('seedPhrase', this.seedPhrase);
             
+            // Get current network from chainlist
+            const currentNetwork = this.getCurrentNetwork();
+            if (!currentNetwork) {
+                throw new Error(`Network with chain ID ${this.currentNetworkChainId} not found. Please load networks first.`);
+            }
+
             // Use provided RPC URL or current network's RPC URL
             if (rpcUrl) {
                 this.rpcUrl = rpcUrl;
+            } else {
+                this.rpcUrl = NetworkUtils.getBestRpcUrl(currentNetwork.rpc);
             }
+
+            // Update USDT address for current network
+            this.usdtAddress = this.getUSDTAddressForNetwork();
 
             // Initialize Web3 with current network's RPC
             this.web3 = new Web3(this.rpcUrl);
             
             // Test connection
             const blockNumber = await this.web3.eth.getBlockNumber();
-            console.log(`Connected to ${this.networks[this.currentNetwork].name} - Block: ${blockNumber}`);
+            console.log(`Connected to ${currentNetwork.name} - Block: ${blockNumber}`);
             
             this.isInitialized = true;
-            console.log(`HD Wallet Manager initialized successfully on ${this.networks[this.currentNetwork].name}`);
+            console.log(`HD Wallet Manager initialized successfully on ${currentNetwork.name}`);
             
             return { 
                 success: true, 
-                message: `Wallet manager initialized on ${this.networks[this.currentNetwork].name}`,
-                network: this.networks[this.currentNetwork]
+                message: `Wallet manager initialized on ${currentNetwork.name}`,
+                network: currentNetwork
             };
             
         } catch (error) {
@@ -190,6 +229,34 @@ class HDWalletManager {
     }
 
     /**
+     * Validate USDT address
+     */
+    async validateUSDTAddress() {
+        try {
+            if (!this.web3) return false;
+            
+            // Only validate if we have a USDT address configured
+            if (!this.usdtAddress || this.usdtAddress === '') {
+                console.warn(`No USDT address configured for ${this.getCurrentNetwork().name}`);
+                return false;
+            }
+            
+            // Simple validation - check if contract exists
+            const contractCode = await this.web3.eth.getCode(this.usdtAddress);
+            if (contractCode === '0x') {
+                console.warn(`USDT contract not found at ${this.usdtAddress}`);
+                return false;
+            }
+            
+            console.log(`USDT contract validated: ${this.usdtAddress}`);
+            return true;
+        } catch (error) {
+            console.error('Error validating USDT address:', error);
+            return false;
+        }
+    }
+
+    /**
      * Check balance for a single wallet
      */
     async checkSingleWalletBalance(walletIndex, onProgress = null) {
@@ -213,14 +280,38 @@ class HDWalletManager {
                 console.log(`Checking balance for wallet ${walletIndex} on ${this.networks[this.currentNetwork].name}`);
                 console.log(`Using RPC: ${this.rpcUrl}, USDT Address: ${this.usdtAddress}`);
 
+                // Validate USDT address before checking balances (only do this once per session)
+                if (!this._usdtValidated) {
+                    await this.validateUSDTAddress();
+                    this._usdtValidated = true;
+                }
+
                 // Check Native POL balance
                 const polBalance = await this.web3.eth.getBalance(wallet.address);
                 const polBalanceEth = this.web3.utils.fromWei(polBalance, 'ether');
                 
-                // Check USDT balance
-                const usdtContract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);
-                const usdtBalance = await usdtContract.methods.balanceOf(wallet.address).call();
-                const usdtBalanceFormatted = parseFloat(usdtBalance) / Math.pow(10, 6); // USDT has 6 decimals
+                // Check USDT balance with better error handling
+                let usdtBalanceFormatted = 0;
+                try {
+                    if (this.usdtAddress && this.usdtAddress !== '') {
+                        // First verify the contract exists by checking if it has code
+                        const contractCode = await this.web3.eth.getCode(this.usdtAddress);
+                        if (contractCode === '0x') {
+                            console.warn(`USDT contract not found at ${this.usdtAddress} on ${this.getCurrentNetwork().name}`);
+                            usdtBalanceFormatted = 0; // Set to 0 if contract doesn't exist
+                        } else {
+                            const usdtContract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);
+                            const usdtBalance = await usdtContract.methods.balanceOf(wallet.address).call();
+                            usdtBalanceFormatted = parseFloat(usdtBalance) / Math.pow(10, 6); // USDT has 6 decimals
+                        }
+                    } else {
+                        console.warn(`No USDT address configured for ${this.getCurrentNetwork().name}`);
+                        usdtBalanceFormatted = 0;
+                    }
+                } catch (usdtError) {
+                    console.warn(`Failed to check USDT balance for wallet ${wallet.index}:`, usdtError.message);
+                    usdtBalanceFormatted = 0; // Default to 0 if USDT check fails
+                }
                 
                 // Update wallet object
                 wallet.nativePol = parseFloat(polBalanceEth);
@@ -372,7 +463,7 @@ class HDWalletManager {
     /**
      * Execute single transaction
      */
-    async executeTransaction(fromWalletIndex, toAddress, amount, token) {
+    async executeTransaction(fromWalletIndex, toAddress, amount, token, gasConfig = null) {
         try {
             const fromWallet = this.getWallet(fromWalletIndex);
             if (!fromWallet) {
@@ -397,6 +488,16 @@ class HDWalletManager {
                     throw new Error(`Insufficient POL balance. Required: ${amount}, Available: ${balanceEth.toFixed(6)}`);
                 }
             } else if (token === 'USDT') {
+                if (!this.usdtAddress || this.usdtAddress === '') {
+                    throw new Error(`USDT is not supported on ${this.getCurrentNetwork().name}`);
+                }
+                
+                // Check if USDT contract exists
+                const contractCode = await this.web3.eth.getCode(this.usdtAddress);
+                if (contractCode === '0x') {
+                    throw new Error(`USDT contract not found at ${this.usdtAddress} on ${this.getCurrentNetwork().name}`);
+                }
+                
                 const contract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);
                 const balance = await contract.methods.balanceOf(fromWallet.address).call();
                 const balanceFormatted = parseFloat(balance) / Math.pow(10, 6);
@@ -407,9 +508,18 @@ class HDWalletManager {
 
             if (token === 'POL') {
                 // Native POL transfer
-                const gasPrice = await this.web3.eth.getGasPrice();
-                const adjustedGasPrice = Math.floor(parseFloat(gasPrice) * this.gasPriceMultiplier);
-                const gasLimit = 21000;
+                let gasPrice, gasLimit;
+                
+                if (gasConfig) {
+                    // Use custom gas configuration
+                    gasPrice = Math.floor(this.web3.utils.toWei(gasConfig.gasPrice.toString(), 'gwei'));
+                    gasLimit = gasConfig.gasLimit;
+                } else {
+                    // Use default gas configuration
+                    const networkGasPrice = await this.web3.eth.getGasPrice();
+                    gasPrice = Math.floor(parseFloat(networkGasPrice) * this.gasPriceMultiplier);
+                    gasLimit = 21000;
+                }
 
                 // Get nonce with retry mechanism
                 let nonce;
@@ -435,9 +545,17 @@ class HDWalletManager {
                     to: toAddress,
                     value: this.web3.utils.toWei(amount.toString(), 'ether'),
                     gas: gasLimit,
-                    gasPrice: adjustedGasPrice,
+                    gasPrice: gasPrice,
                     nonce: nonce
                 };
+                
+                // Add EIP-1559 fields if priority fee is specified
+                if (gasConfig && gasConfig.priorityFee > 0) {
+                    const priorityFeeWei = this.web3.utils.toWei(gasConfig.priorityFee.toString(), 'gwei');
+                    tx.maxPriorityFeePerGas = priorityFeeWei;
+                    tx.maxFeePerGas = Math.floor(parseFloat(gasPrice) + parseFloat(priorityFeeWei));
+                    delete tx.gasPrice; // Use EIP-1559 format
+                }
 
                 console.log(`POL transaction details:`, { from: tx.from, to: tx.to, value: tx.value, nonce: tx.nonce, gasPrice: tx.gasPrice });
 
@@ -445,7 +563,7 @@ class HDWalletManager {
                 const receipt = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 
                 txHash = receipt.transactionHash;
-                gasFee = (gasLimit * adjustedGasPrice) / Math.pow(10, 18);
+                gasFee = (gasLimit * gasPrice) / Math.pow(10, 18);
 
                 console.log(`POL transfer successful: ${txHash}`);
                 return { success: true, txHash, gasFee };
@@ -455,9 +573,18 @@ class HDWalletManager {
                 const contract = new this.web3.eth.Contract(this.erc20Abi, this.usdtAddress);
                 const amountWei = Math.floor(amount * Math.pow(10, 6)); // USDT has 6 decimals
 
-                const gasPrice = await this.web3.eth.getGasPrice();
-                const adjustedGasPrice = Math.floor(parseFloat(gasPrice) * this.gasPriceMultiplier);
-                const gasLimit = 65000;
+                let gasPrice, gasLimit;
+                
+                if (gasConfig) {
+                    // Use custom gas configuration
+                    gasPrice = Math.floor(this.web3.utils.toWei(gasConfig.gasPrice.toString(), 'gwei'));
+                    gasLimit = gasConfig.gasLimit;
+                } else {
+                    // Use default gas configuration
+                    const networkGasPrice = await this.web3.eth.getGasPrice();
+                    gasPrice = Math.floor(parseFloat(networkGasPrice) * this.gasPriceMultiplier);
+                    gasLimit = 65000;
+                }
 
                 // Get nonce with retry mechanism
                 let nonce;
@@ -483,9 +610,17 @@ class HDWalletManager {
                     to: this.usdtAddress,
                     data: contract.methods.transfer(toAddress, amountWei.toString()).encodeABI(),
                     gas: gasLimit,
-                    gasPrice: adjustedGasPrice,
+                    gasPrice: gasPrice,
                     nonce: nonce
                 };
+                
+                // Add EIP-1559 fields if priority fee is specified
+                if (gasConfig && gasConfig.priorityFee > 0) {
+                    const priorityFeeWei = this.web3.utils.toWei(gasConfig.priorityFee.toString(), 'gwei');
+                    tx.maxPriorityFeePerGas = priorityFeeWei;
+                    tx.maxFeePerGas = Math.floor(parseFloat(gasPrice) + parseFloat(priorityFeeWei));
+                    delete tx.gasPrice; // Use EIP-1559 format
+                }
 
                 console.log(`USDT transaction details:`, { from: tx.from, to: tx.to, amount: amountWei, nonce: tx.nonce, gasPrice: tx.gasPrice });
 
@@ -493,7 +628,7 @@ class HDWalletManager {
                 const receipt = await this.web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 
                 txHash = receipt.transactionHash;
-                gasFee = (gasLimit * adjustedGasPrice) / Math.pow(10, 18);
+                gasFee = (gasLimit * gasPrice) / Math.pow(10, 18);
 
                 console.log(`USDT transfer successful: ${txHash}`);
                 return { success: true, txHash, gasFee };

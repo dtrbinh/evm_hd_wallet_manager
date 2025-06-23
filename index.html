@@ -15,14 +15,12 @@
         object-src 'none';
         base-uri 'self';
         form-action 'self';
-        frame-ancestors 'none';
         upgrade-insecure-requests;
         block-all-mixed-content;
     ">
     
     <!-- Additional Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
     <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=()">
@@ -664,7 +662,7 @@
                                 <label class="form-label">Token</label>
                                 <select class="form-select" id="tokenToSend">
                                     <option value="POL">Native POL</option>
-                                    <option value="USDT">USDT</option>
+                                    <option value="USDT" id="usdtSendOption">USDT</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
@@ -727,7 +725,7 @@
                                 <label class="form-label">Token</label>
                                 <select class="form-select" id="tokenToReceive">
                                     <option value="POL">Native POL</option>
-                                    <option value="USDT">USDT</option>
+                                    <option value="USDT" id="usdtReceiveOption">USDT</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
@@ -745,6 +743,115 @@
                                         </h6>
                                         <div id="senderWallets" class="generated-wallets-section">
                                             <!-- Sender checkboxes will be populated here -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gas Fee Configuration -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card border-info">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-gas-pump"></i> Gas Fee Configuration
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Gas Mode Selection -->
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <label class="form-label">Gas Fee Mode</label>
+                                            <div class="btn-group w-100" role="group">
+                                                <input type="radio" class="btn-check" name="gasMode" id="autoGasMode" value="auto" checked>
+                                                <label class="btn btn-outline-info" for="autoGasMode">
+                                                    <i class="fas fa-magic"></i> Auto (Recommended)
+                                                </label>
+                                                <input type="radio" class="btn-check" name="gasMode" id="customGasMode" value="custom">
+                                                <label class="btn btn-outline-warning" for="customGasMode">
+                                                    <i class="fas fa-cog"></i> Custom (Advanced)
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Auto Gas Settings (Default) -->
+                                    <div id="autoGasSection">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Transaction Speed</label>
+                                                <select class="form-select" id="gasSpeedPreset">
+                                                    <option value="slow">🐌 Slow (Lower Cost)</option>
+                                                    <option value="standard" selected>⚡ Standard (Recommended)</option>
+                                                    <option value="fast">🚀 Fast (Higher Cost)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Gas Price Multiplier</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="gasPriceMultiplier" 
+                                                           value="1.2" step="0.1" min="1.0" max="3.0">
+                                                    <span class="input-group-text">x</span>
+                                                </div>
+                                                <div class="form-text">Multiply network gas price (1.0 = network price)</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Current Network Gas</label>
+                                                <div class="form-control-plaintext">
+                                                    <span id="networkGasPrice">Loading...</span> Gwei
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Custom Gas Settings -->
+                                    <div id="customGasSection" style="display: none;">
+                                        <div class="alert alert-warning" role="alert">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            <strong>Advanced Mode:</strong> Setting gas too low may cause transactions to fail or take very long. Setting it too high wastes money.
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Gas Price (Gwei)</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="customGasPrice" 
+                                                           step="0.1" min="1" max="1000" placeholder="20.0">
+                                                    <span class="input-group-text">Gwei</span>
+                                                </div>
+                                                <div class="form-text">Higher = faster confirmation</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Gas Limit</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="customGasLimit" 
+                                                           step="1000" min="21000" max="500000" placeholder="21000">
+                                                    <span class="input-group-text">units</span>
+                                                </div>
+                                                <div class="form-text">POL: 21000, USDT: 65000</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Max Priority Fee (Gwei)</label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" id="customPriorityFee" 
+                                                           step="0.1" min="0" max="100" placeholder="2.0">
+                                                    <span class="input-group-text">Gwei</span>
+                                                </div>
+                                                <div class="form-text">Tip for miners (EIP-1559)</div>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-2">
+                                            <div class="col-md-6">
+                                                <button type="button" class="btn btn-outline-info btn-sm" onclick="loadNetworkGasEstimates()">
+                                                    <i class="fas fa-sync"></i> Load Network Estimates
+                                                </button>
+                                            </div>
+                                            <div class="col-md-6 text-end">
+                                                <small class="text-muted">
+                                                    Est. Cost per TX: <span id="customGasCostPreview">-</span> POL
+                                                </small>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -774,6 +881,16 @@
                                         <div class="col-md-3">
                                             <strong>Total Cost:</strong>
                                             <div id="totalCost">0.000000</div>
+                                        </div>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-12">
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle"></i>
+                                                Gas Mode: <span id="gasModeDisplay">Auto</span> | 
+                                                Gas Price: <span id="effectiveGasPrice">-</span> Gwei | 
+                                                Gas Limit: <span id="effectiveGasLimit">-</span> units
+                                            </small>
                                         </div>
                                     </div>
                                 </div>
@@ -821,12 +938,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" integrity="sha512-r22gChDnGvBylk90+2e/ycr3RVrDi8DIOkIGNhJlKfuyQM4tIRAI062MaV8sfjQKYVGjOBaZBOA87z+IhZE9DA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     
     <!-- Custom Scripts -->
-    <script src="scripts/constants.js"></script>
-    <script src="scripts/network-manager.js"></script>
-    <script src="scripts/wallet-manager.js"></script>
-    <script src="scripts/multi-transceiver.js"></script>
-    <script src="scripts/ui-controller.js"></script>
-    <script src="scripts/main.js"></script>
+    <script src="scripts/network.js?v=1.0.2"></script>
+    <script src="scripts/constants.js?v=1.0.2"></script>
+    <script src="scripts/network-manager.js?v=1.0.2"></script>
+    <script src="scripts/wallet-manager.js?v=1.0.2"></script>
+    <script src="scripts/multi-transceiver.js?v=1.0.2"></script>
+    <script src="scripts/ui-controller.js?v=1.0.2"></script>
+    <script src="scripts/main.js?v=1.0.2"></script>
     
     <!-- Initialize default values from constants -->
     <script>
@@ -899,10 +1017,19 @@
         }
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Wait for constants to be loaded
+            if (typeof APP_SETTINGS === 'undefined') {
+                console.log('Waiting for constants to load...');
+                setTimeout(() => {
+                    document.dispatchEvent(new Event('DOMContentLoaded'));
+                }, 100);
+                return;
+            }
+            
             // Update default wallet count
             const walletCountInput = document.getElementById('walletCount');
             const endIndexInput = document.getElementById('endIndex');
-            if (walletCountInput && endIndexInput) {
+            if (walletCountInput && endIndexInput && APP_SETTINGS) {
                 const defaultCount = APP_SETTINGS.defaultWalletCount;
                 walletCountInput.value = defaultCount;
                 endIndexInput.value = defaultCount - 1;
@@ -910,15 +1037,19 @@
             
             // Update derivation path display
             const derivationPathDisplay = document.getElementById('derivationPathDisplay');
-            if (derivationPathDisplay) {
+            if (derivationPathDisplay && APP_SETTINGS) {
                 derivationPathDisplay.textContent = `Path: ${APP_SETTINGS.derivationPathPrefix}{index}`;
             }
             
             // Initialize network display (handled by network manager now)
             // Network display will be initialized by the network manager
             
-            // Update RPC URL field placeholder
-            updateRpcUrlField('mainnet');
+            // Update RPC URL field placeholder (with error handling)
+            try {
+                updateRpcUrlField('mainnet');
+            } catch (error) {
+                console.warn('updateRpcUrlField failed:', error);
+            }
             
             // Fetch GitHub stats
             fetchGitHubStats();
