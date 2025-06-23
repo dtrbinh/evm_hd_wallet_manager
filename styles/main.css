@@ -1350,6 +1350,27 @@ textarea:focus,
     position: relative;
 }
 
+.network-search-section .input-group .form-control {
+    border-right: none;
+    border-radius: 0.375rem 0 0 0.375rem !important;
+    height: 40px !important; /* Fixed height */
+    min-height: 40px;
+    max-height: 40px;
+}
+
+.network-search-section .input-group .input-group-text {
+    border-right: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+    height: 40px !important; /* Fixed height to match input */
+    min-height: 40px;
+    max-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .network-search-section .form-check {
     margin-bottom: 0;
 }
@@ -1410,6 +1431,14 @@ textarea:focus,
     color: white !important;
     border-color: rgba(255, 255, 255, 0.3) !important;
     background: rgba(255, 255, 255, 0.1) !important;
+    height: 40px !important; /* Fixed height to match input */
+    min-height: 40px;
+    max-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-left: none;
+    border-radius: 0 0.375rem 0.375rem 0 !important;
 }
 
 #refreshNetworksBtn:hover {
@@ -1418,8 +1447,16 @@ textarea:focus,
     background: rgba(255, 255, 255, 0.2) !important;
 }
 
+#refreshNetworksBtn:focus {
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+}
+
 #refreshNetworksBtn i {
     color: white !important;
+    font-size: 0.875rem;
 }
 
 /* Responsive adjustments for network search */
@@ -1430,6 +1467,14 @@ textarea:focus,
     
     .network-search-section .input-group {
         margin-bottom: 0.75rem !important;
+    }
+    
+    .network-search-section .input-group .form-control,
+    .network-search-section .input-group .input-group-text,
+    #refreshNetworksBtn {
+        height: 38px !important; /* Slightly smaller on mobile */
+        min-height: 38px;
+        max-height: 38px;
     }
 }
 
