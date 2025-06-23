@@ -54,14 +54,35 @@ document.addEventListener('DOMContentLoaded', async function() {
  */
 async function initializeWalletManager() {
     try {
+        // Rate limiting check
+        const rateLimitCheck = SecurityUtils.rateLimitCheck('wallet_init', 5, 300000); // 5 attempts per 5 minutes
+        if (!rateLimitCheck.allowed) {
+            alert(rateLimitCheck.message);
+            return;
+        }
+        
         const seedPhrase = document.getElementById('seedPhrase').value.trim();
         const rpcUrl = document.getElementById('rpcUrl').value.trim();
         
-        // Validate seed phrase
-        const validation = uiController.validateSeedPhrase(seedPhrase);
+        // Enhanced seed phrase validation using security utils
+        const validation = SecurityUtils.validateSeedPhrase(seedPhrase);
         if (!validation.valid) {
             alert(validation.error);
             return;
+        }
+        
+        // Validate RPC URL if provided
+        if (rpcUrl) {
+            const rpcValidation = NetworkSecurity.validateRpcUrl(rpcUrl);
+            if (!rpcValidation.valid) {
+                alert('RPC URL Error: ' + rpcValidation.error);
+                return;
+            }
+            if (rpcValidation.warning) {
+                if (!confirm('RPC URL Warning: ' + rpcValidation.warning + '\n\nDo you want to continue?')) {
+                    return;
+                }
+            }
         }
         
         uiController.showFullscreenLoading('Initializing Wallet Manager', 'Connecting to blockchain network...', 10);
@@ -77,8 +98,8 @@ async function initializeWalletManager() {
         // Use current network from network manager
         const currentNetworkConfig = networkManager.currentNetwork;
         
-        // Initialize with current network
-        const result = await walletManager.initialize(seedPhrase, rpcUrl || currentNetworkConfig.rpcUrl);
+        // Initialize with current network using sanitized seed phrase
+        const result = await walletManager.initialize(validation.sanitized || seedPhrase, rpcUrl || currentNetworkConfig.rpcUrl);
         
         if (result.success) {
             // Create multi-transceiver instance
@@ -420,6 +441,24 @@ async function executeMultiTransaction() {
             return;
         }
         
+        // Enhanced transaction confirmation with security checks
+        const sampleTransaction = {
+            from: mode === 'multi-send' ? 
+                walletManager.getWallet(senderWallet)?.address : 
+                walletManager.getWallet(selectedWallets[0])?.address,
+            to: mode === 'multi-send' ? 
+                (selectedReceivers && selectedReceivers[0] ? selectedReceivers[0].address : walletManager.getWallet(selectedWallets[0])?.address) :
+                walletManager.getWallet(receiverWallet)?.address,
+            amount: amount,
+            token: token,
+            network: walletManager.getCurrentNetwork().name
+        };
+        
+        const confirmResult = await TransactionSecurity.confirmTransaction(sampleTransaction);
+        if (!confirmResult) {
+            return;
+        }
+        
         const transactionCount = mode === 'multi-send' ? selectedReceivers.length : selectedWallets.length;
         if (!confirm(`Execute ${mode} transaction for ${transactionCount} ${mode === 'multi-send' ? 'receivers' : 'wallets'}?\n\nTotal amount: ${(amount * transactionCount).toFixed(6)} ${token}`)) {
             return;
@@ -636,8 +675,9 @@ function addCustomReceiver() {
         return;
     }
     
-    const address = addressInput.value.trim();
-    const label = labelInput.value.trim() || `Custom-${customReceivers.length + 1}`;
+    // Sanitize inputs
+    const address = SecurityUtils.sanitizeInput(addressInput.value, 'address');
+    const label = SecurityUtils.sanitizeInput(labelInput.value.trim() || `Custom-${customReceivers.length + 1}`, 'text');
     
     // Validate address
     if (!address) {
@@ -645,7 +685,7 @@ function addCustomReceiver() {
         return;
     }
     
-    if (!isValidEthereumAddress(address)) {
+    if (!SecurityUtils.validateEthereumAddress(address)) {
         uiController.showToast('Please enter a valid Ethereum address', 'error');
         return;
     }

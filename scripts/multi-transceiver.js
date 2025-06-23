@@ -84,6 +84,18 @@ class MultiTransceiver {
     async executeMultiTransaction(params) {
         const { mode, token, senderWallet, receiverWallet, selectedWallets, selectedReceivers, amount } = params;
         
+        // Enhanced security validation
+        const validation = this.validateTransactionParams(params);
+        if (!validation.valid) {
+            throw new Error(`Security validation failed: ${validation.errors.join(', ')}`);
+        }
+        
+        // Rate limiting for transaction execution
+        const rateLimitCheck = SecurityUtils.rateLimitCheck('multi_transaction', 3, 600000); // 3 attempts per 10 minutes
+        if (!rateLimitCheck.allowed) {
+            throw new Error(rateLimitCheck.message);
+        }
+        
         const totalReceivers = mode === 'multi-send' ? (selectedReceivers ? selectedReceivers.length : selectedWallets.length) : selectedWallets.length;
         console.log(`Executing ${mode} transaction: ${token}, amount: ${amount}, receivers: ${totalReceivers}`);
         
@@ -139,9 +151,37 @@ class MultiTransceiver {
                     } else if (receiverInfo.type === 'custom') {
                         receiverAddress = receiverInfo.address;
                         receiverLabel = receiverInfo.label;
+                        
+                        // Enhanced validation for custom addresses
+                        if (!SecurityUtils.validateEthereumAddress(receiverAddress)) {
+                            console.error(`Invalid custom receiver address: ${receiverAddress}, skipping`);
+                            failedTransactions++;
+                            continue;
+                        }
                     } else {
                         console.warn(`Unknown receiver type, skipping`);
                         continue;
+                    }
+                    
+                    // Security validation for each transaction
+                    const transactionCheck = {
+                        from: sender.address,
+                        to: receiverAddress,
+                        amount: amount,
+                        token: token,
+                        network: this.walletManager.getCurrentNetwork().name
+                    };
+                    
+                    const securityValidation = TransactionSecurity.validateTransaction(transactionCheck);
+                    if (!securityValidation.isValid) {
+                        console.error(`Transaction security validation failed for ${receiverLabel}: ${securityValidation.errors.join(', ')}`);
+                        failedTransactions++;
+                        continue;
+                    }
+                    
+                    // Log warnings if any
+                    if (securityValidation.warnings.length > 0) {
+                        console.warn(`Transaction warnings for ${receiverLabel}:`, securityValidation.warnings);
                     }
                     
                     // Show progress

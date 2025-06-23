@@ -171,6 +171,26 @@ class NetworkManager {
             return false;
         }
 
+        // Security validation for network switching
+        if (network.rpcUrl) {
+            const rpcValidation = NetworkSecurity.validateRpcUrl(network.rpcUrl);
+            if (!rpcValidation.valid) {
+                if (typeof uiController !== 'undefined' && uiController.showToast) {
+                    uiController.showToast(`Network security check failed: ${rpcValidation.error}`, 'error');
+                } else {
+                    console.error(`Network security check failed: ${rpcValidation.error}`);
+                }
+                return false;
+            }
+            
+            if (rpcValidation.warning) {
+                const proceed = confirm(`Network Warning: ${rpcValidation.warning}\n\nDo you want to continue?`);
+                if (!proceed) {
+                    return false;
+                }
+            }
+        }
+
         try {
             if (typeof uiController !== 'undefined' && uiController.showToast) {
                 uiController.showToast(`Switching to ${network.name}...`, 'info');

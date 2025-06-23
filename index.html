@@ -4,6 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
     
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://api.github.com;
+        style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+        img-src 'self' data: https: blob:;
+        connect-src 'self' https: wss: ws:;
+        font-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        frame-ancestors 'none';
+        upgrade-insecure-requests;
+        block-all-mixed-content;
+    ">
+    
+    <!-- Additional Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=()">
+    
     <!-- Primary Meta Tags -->
     <title>EVM HD Wallet Manager - Multi-Chain Cryptocurrency Wallet | 1000+ Networks | dtrbinh</title>
     <meta name="title" content="EVM HD Wallet Manager - Multi-Chain Cryptocurrency Wallet | 1000+ Networks | dtrbinh">
@@ -458,8 +481,6 @@
                     </div>
                 </div>
 
-
-
                 <!-- Step Controls -->
                 <div class="card mb-4" id="stepControls" style="display: none;">
                     <div class="card-header">
@@ -787,6 +808,9 @@
     </footer>
 
     <!-- Scripts -->
+    <!-- Security Utilities (Load First) -->
+    <script src="scripts/security-utils.js"></script>
+    
     <!-- Web3.js -->
     <script src="https://cdn.jsdelivr.net/npm/web3@4.2.0/dist/web3.min.js" crossorigin="anonymous"></script>
     <!-- Ethers.js for crypto utilities from cdnjs -->

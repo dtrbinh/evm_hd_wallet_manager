@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Test - EVM HD Wallet Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .test-pass { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .test-fail { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .test-warning { background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>🔒 Security Test Suite</h1>
+        <p class="lead">Testing all security implementations for EVM HD Wallet Manager</p>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Input Sanitization Tests</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="testInputSanitization()">Run Tests</button>
+                        <div id="sanitization-results"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Address Validation Tests</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="testAddressValidation()">Run Tests</button>
+                        <div id="address-results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Seed Phrase Validation Tests</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="testSeedPhraseValidation()">Run Tests</button>
+                        <div id="seedphrase-results"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Rate Limiting Tests</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="testRateLimiting()">Run Tests</button>
+                        <div id="ratelimit-results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Network Security Tests</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="testNetworkSecurity()">Run Tests</button>
+                        <div id="network-results"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Transaction Security Tests</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="testTransactionSecurity()">Run Tests</button>
+                        <div id="transaction-results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Phishing Protection Tests</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary" onclick="testPhishingProtection()">Run Tests</button>
+                        <div id="phishing-results"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <button class="btn btn-success btn-lg" onclick="runAllTests()">🚀 Run All Security Tests</button>
+            <button class="btn btn-secondary btn-lg ms-2" onclick="clearResults()">Clear Results</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.14.4/ethers.umd.min.js"></script>
+    <script src="scripts/security-utils.js"></script>
+    
+    <script>
+        function addResult(containerId, message, type = 'pass') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-result test-${type}`;
+            div.innerHTML = message;
+            container.appendChild(div);
+        }
+
+        function testInputSanitization() {
+            const container = 'sanitization-results';
+            document.getElementById(container).innerHTML = '';
+            
+            // Test cases
+            const tests = [
+                { input: '<script>alert("xss")</script>', type: 'text', expected: '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;' },
+                { input: '0x1234567890123456789012345678901234567890abc', type: 'address', expected: '0x1234567890123456789012345678901234567890' },
+                { input: '123.456.789', type: 'amount', expected: '123.456789' },
+                { input: 'hello   world   test', type: 'seedPhrase', expected: 'hello world test' },
+                { input: 'https://malicious-site.com', type: 'url', expected: 'https://malicious-site.com' }
+            ];
+            
+            tests.forEach((test, index) => {
+                try {
+                    const result = SecurityUtils.sanitizeInput(test.input, test.type);
+                    if (result === test.expected) {
+                        addResult(container, `✓ Test ${index + 1}: ${test.type} sanitization passed`, 'pass');
+                    } else {
+                        addResult(container, `✗ Test ${index + 1}: Expected "${test.expected}", got "${result}"`, 'fail');
+                    }
+                } catch (error) {
+                    addResult(container, `✗ Test ${index + 1}: Error - ${error.message}`, 'fail');
+                }
+            });
+        }
+
+        function testAddressValidation() {
+            const container = 'address-results';
+            document.getElementById(container).innerHTML = '';
+            
+            const tests = [
+                { address: '0x742d35Cc6634C0532925a3b8D3C8F8a3C8C7e5C5', expected: true },
+                { address: '0x0000000000000000000000000000000000000000', expected: true },
+                { address: '0x742d35Cc6634C0532925a3b8D3C8F8a3C8C7e5C', expected: false }, // Too short
+                { address: '742d35Cc6634C0532925a3b8D3C8F8a3C8C7e5C5', expected: false }, // No 0x prefix
+                { address: '0xGGGd35Cc6634C0532925a3b8D3C8F8a3C8C7e5C5', expected: false }, // Invalid hex
+                { address: '', expected: false },
+                { address: null, expected: false }
+            ];
+            
+            tests.forEach((test, index) => {
+                try {
+                    const result = SecurityUtils.validateEthereumAddress(test.address);
+                    if (result === test.expected) {
+                        addResult(container, `✓ Test ${index + 1}: Address validation passed for "${test.address}"`, 'pass');
+                    } else {
+                        addResult(container, `✗ Test ${index + 1}: Expected ${test.expected}, got ${result} for "${test.address}"`, 'fail');
+                    }
+                } catch (error) {
+                    addResult(container, `✗ Test ${index + 1}: Error - ${error.message}`, 'fail');
+                }
+            });
+        }
+
+        function testSeedPhraseValidation() {
+            const container = 'seedphrase-results';
+            document.getElementById(container).innerHTML = '';
+            
+            const tests = [
+                { phrase: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about', expected: true },
+                { phrase: 'detail tumble lawsuit health feature trap security invest cart veteran lawn purse', expected: true },
+                { phrase: 'short phrase', expected: false }, // Too short
+                { phrase: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon', expected: false }, // Too long
+                { phrase: '', expected: false },
+                { phrase: 'invalid! phrase@ with# special$ characters%', expected: false }
+            ];
+            
+            tests.forEach((test, index) => {
+                try {
+                    const result = SecurityUtils.validateSeedPhrase(test.phrase);
+                    if (result.valid === test.expected) {
+                        addResult(container, `✓ Test ${index + 1}: Seed phrase validation passed`, 'pass');
+                    } else {
+                        addResult(container, `✗ Test ${index + 1}: Expected ${test.expected}, got ${result.valid}. Error: ${result.error}`, 'fail');
+                    }
+                } catch (error) {
+                    addResult(container, `✗ Test ${index + 1}: Error - ${error.message}`, 'fail');
+                }
+            });
+        }
+
+        function testRateLimiting() {
+            const container = 'ratelimit-results';
+            document.getElementById(container).innerHTML = '';
+            
+            try {
+                // Clear any existing rate limit data
+                localStorage.removeItem('rateLimit_test');
+                
+                // Test normal usage
+                const result1 = SecurityUtils.rateLimitCheck('test', 3, 60000);
+                if (result1.allowed) {
+                    addResult(container, '✓ Test 1: First request allowed', 'pass');
+                } else {
+                    addResult(container, '✗ Test 1: First request should be allowed', 'fail');
+                }
+                
+                // Test multiple requests
+                SecurityUtils.rateLimitCheck('test', 3, 60000);
+                SecurityUtils.rateLimitCheck('test', 3, 60000);
+                const result2 = SecurityUtils.rateLimitCheck('test', 3, 60000);
+                
+                if (!result2.allowed) {
+                    addResult(container, '✓ Test 2: Rate limit triggered correctly', 'pass');
+                } else {
+                    addResult(container, '✗ Test 2: Rate limit should have triggered', 'fail');
+                }
+                
+                // Clean up
+                localStorage.removeItem('rateLimit_test');
+                
+            } catch (error) {
+                addResult(container, `✗ Rate limiting test error: ${error.message}`, 'fail');
+            }
+        }
+
+        function testNetworkSecurity() {
+            const container = 'network-results';
+            document.getElementById(container).innerHTML = '';
+            
+            const tests = [
+                { url: 'https://polygon-rpc.com', expected: true },
+                { url: 'http://unsafe-rpc.com', expected: false }, // HTTP not allowed
+                { url: 'https://localhost:8545', expected: true }, // Localhost should be OK
+                { url: 'ftp://malicious-rpc.com', expected: false }, // Wrong protocol
+                { url: 'not-a-url', expected: false },
+                { url: '', expected: false }
+            ];
+            
+            tests.forEach((test, index) => {
+                try {
+                    const result = NetworkSecurity.validateRpcUrl(test.url);
+                    if (result.valid === test.expected) {
+                        addResult(container, `✓ Test ${index + 1}: Network validation passed for "${test.url}"`, 'pass');
+                    } else {
+                        addResult(container, `✗ Test ${index + 1}: Expected ${test.expected}, got ${result.valid}. Error: ${result.error}`, 'fail');
+                    }
+                } catch (error) {
+                    addResult(container, `✗ Test ${index + 1}: Error - ${error.message}`, 'fail');
+                }
+            });
+        }
+
+        function testTransactionSecurity() {
+            const container = 'transaction-results';
+            document.getElementById(container).innerHTML = '';
+            
+            const tests = [
+                {
+                    transaction: {
+                        from: '0x742d35Cc6634C0532925a3b8D3C8F8a3C8C7e5C5',
+                        to: '0x8ba1f109551bD432803012645Hac136c7C8B2b81',
+                        amount: 0.1,
+                        token: 'ETH',
+                        network: 'Ethereum'
+                    },
+                    expected: true
+                },
+                {
+                    transaction: {
+                        from: '0x742d35Cc6634C0532925a3b8D3C8F8a3C8C7e5C5',
+                        to: '0x0000000000000000000000000000000000000000',
+                        amount: 0.1,
+                        token: 'ETH',
+                        network: 'Ethereum'
+                    },
+                    expected: false // Burn address
+                },
+                {
+                    transaction: {
+                        from: '0x742d35Cc6634C0532925a3b8D3C8F8a3C8C7e5C5',
+                        to: '0x8ba1f109551bD432803012645Hac136c7C8B2b81',
+                        amount: 0,
+                        token: 'ETH',
+                        network: 'Ethereum'
+                    },
+                    expected: false // Zero amount
+                }
+            ];
+            
+            tests.forEach((test, index) => {
+                try {
+                    const result = TransactionSecurity.validateTransaction(test.transaction);
+                    if (result.isValid === test.expected) {
+                        addResult(container, `✓ Test ${index + 1}: Transaction validation passed`, 'pass');
+                    } else {
+                        addResult(container, `✗ Test ${index + 1}: Expected ${test.expected}, got ${result.isValid}. Errors: ${result.errors.join(', ')}`, 'fail');
+                    }
+                } catch (error) {
+                    addResult(container, `✗ Test ${index + 1}: Error - ${error.message}`, 'fail');
+                }
+            });
+        }
+
+        function testPhishingProtection() {
+            const container = 'phishing-results';
+            document.getElementById(container).innerHTML = '';
+            
+            try {
+                // Test domain verification
+                const currentDomain = window.location.hostname;
+                const allowedDomains = ['dtrbinh.github.io', 'localhost', '127.0.0.1'];
+                
+                if (allowedDomains.includes(currentDomain)) {
+                    addResult(container, `✓ Domain verification passed: ${currentDomain}`, 'pass');
+                } else {
+                    addResult(container, `⚠ Domain verification warning: ${currentDomain} not in allowed list`, 'warning');
+                }
+                
+                // Test SSL check
+                if (window.location.protocol === 'https:' || currentDomain === 'localhost') {
+                    addResult(container, '✓ SSL check passed', 'pass');
+                } else {
+                    addResult(container, '⚠ SSL check warning: Not using HTTPS', 'warning');
+                }
+                
+                // Test script integrity
+                const scripts = document.querySelectorAll('script[src]');
+                let suspiciousScripts = 0;
+                scripts.forEach(script => {
+                    const src = script.src.toLowerCase();
+                    if (src.includes('malicious') || src.includes('keylogger')) {
+                        suspiciousScripts++;
+                    }
+                });
+                
+                if (suspiciousScripts === 0) {
+                    addResult(container, '✓ Script integrity check passed', 'pass');
+                } else {
+                    addResult(container, `✗ Found ${suspiciousScripts} suspicious scripts`, 'fail');
+                }
+                
+            } catch (error) {
+                addResult(container, `✗ Phishing protection test error: ${error.message}`, 'fail');
+            }
+        }
+
+        function runAllTests() {
+            clearResults();
+            setTimeout(() => testInputSanitization(), 100);
+            setTimeout(() => testAddressValidation(), 200);
+            setTimeout(() => testSeedPhraseValidation(), 300);
+            setTimeout(() => testRateLimiting(), 400);
+            setTimeout(() => testNetworkSecurity(), 500);
+            setTimeout(() => testTransactionSecurity(), 600);
+            setTimeout(() => testPhishingProtection(), 700);
+        }
+
+        function clearResults() {
+            const containers = [
+                'sanitization-results', 'address-results', 'seedphrase-results',
+                'ratelimit-results', 'network-results', 'transaction-results', 'phishing-results'
+            ];
+            containers.forEach(id => {
+                document.getElementById(id).innerHTML = '';
+            });
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('🔒 Security Test Suite Loaded');
+                console.log('Click "Run All Security Tests" to validate all security implementations');
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

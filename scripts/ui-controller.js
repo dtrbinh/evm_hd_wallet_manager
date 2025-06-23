@@ -516,25 +516,18 @@ class UIController {
     }
 
     /**
-     * Validate form inputs
+     * Validate form inputs (deprecated - use SecurityUtils.validateSeedPhrase instead)
      */
     validateSeedPhrase(seedPhrase) {
-        if (!seedPhrase || seedPhrase.trim() === '') {
-            return { valid: false, error: 'Seed phrase is required' };
-        }
-        
-        const words = seedPhrase.trim().split(/\s+/);
-        if (![12, 15, 18, 21, 24].includes(words.length)) {
-            return { valid: false, error: 'Seed phrase must be 12, 15, 18, 21, or 24 words' };
-        }
-        
-        // Validate using ethers.js v6
-        try {
-            ethers.Mnemonic.fromPhrase(seedPhrase.trim());
-            return { valid: true };
-        } catch (error) {
-            return { valid: false, error: 'Invalid seed phrase - please check your words' };
-        }
+        console.warn('UIController.validateSeedPhrase is deprecated. Use SecurityUtils.validateSeedPhrase instead.');
+        return SecurityUtils.validateSeedPhrase(seedPhrase);
+    }
+    
+    /**
+     * Sanitize user input before processing
+     */
+    sanitizeInput(input, type = 'text') {
+        return SecurityUtils.sanitizeInput(input, type);
     }
 
     /**

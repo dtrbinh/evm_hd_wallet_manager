@@ -10,6 +10,9 @@ class HDWalletManager {
         this.seedPhrase = '';
         this.currentNetwork = DEFAULT_NETWORK;
         
+        // Initialize secure memory manager
+        this.secureMemory = new SecureMemoryManager();
+        
         // Use centralized network configurations
         this.networks = NETWORKS;
         
@@ -106,6 +109,9 @@ class HDWalletManager {
             }
 
             this.seedPhrase = seedPhrase.trim();
+            
+            // Store seed phrase securely
+            this.secureMemory.storeSensitiveData('seedPhrase', this.seedPhrase);
             
             // Use provided RPC URL or current network's RPC URL
             if (rpcUrl) {
@@ -543,6 +549,40 @@ class HDWalletManager {
             
         } catch (error) {
             console.error('Error exporting to Excel:', error);
+            return { success: false, error: error.message };
+        }
+    }
+    
+    /**
+     * Clear sensitive data for security
+     */
+    clearSensitiveData() {
+        try {
+            // Clear seed phrase
+            this.seedPhrase = '';
+            
+            // Clear private keys from wallets
+            this.wallets.forEach(wallet => {
+                if (wallet.privateKey) {
+                    // Overwrite with random data (best effort in JS)
+                    wallet.privateKey = SecurityUtils.secureRandom(64);
+                    delete wallet.privateKey;
+                }
+            });
+            
+            // Clear secure memory
+            if (this.secureMemory) {
+                this.secureMemory.clearAllSensitiveData();
+            }
+            
+            // Reset initialization state
+            this.isInitialized = false;
+            
+            console.log('Sensitive data cleared successfully');
+            return { success: true };
+            
+        } catch (error) {
+            console.error('Error clearing sensitive data:', error);
             return { success: false, error: error.message };
         }
     }
