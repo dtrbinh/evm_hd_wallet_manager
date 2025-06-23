@@ -5,7 +5,7 @@ Allow: /styles/
 Allow: /scripts/
 
 # Sitemap
-Sitemap: https://yourdomain.com/sitemap.xml
+Sitemap: https://dtrbinh.github.io/evm_hd_wallet_manager/sitemap.xml
 
 # Crawl delay
 Crawl-delay: 1 
